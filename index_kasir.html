@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aplikasi Bengkel Pintar - Dashboard Kasir</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-gray-100 font-sans" x-data="kasirApp()" x-init="initApp()">
@@ -76,7 +77,7 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <template x-for="item in antrianList" :key="item.no_antrian">
+                                    <template x-for="item in antrianList" :key="item.id || item.no_antrian">
                                         <tr class="border-b hover:bg-gray-50">
                                             <td class="p-2 font-bold align-middle">
                                                 <a href="#" @click.prevent="bukaModalServis(item)" class="text-blue-600 hover:underline" x-text="item.no_antrian"></a>
@@ -520,7 +521,7 @@
                                     <template x-for="p in pengeluaranList" :key="p.id">
                                         <tr class="border-b hover:bg-gray-50">
                                             <td class="p-2 font-mono font-bold text-blue-600" x-text="p.id_pengeluaran || p.id"></td>
-                                            <td class="p-2" x-text="p.tanggal || '-'"></td>
+                                            <td class="p-2" x-text="p.tanggal || (p.created_at ? p.created_at.split('T')[0] : '-')"></td>
                                             <td class="p-2" x-text="p.keterangan"></td>
                                             <td class="p-2 text-right font-bold text-red-600" x-text="'Rp ' + Number(p.nominal || 0).toLocaleString()"></td>
                                         </tr>
@@ -588,8 +589,12 @@
         </div>
     </div>
 
-    <!-- Script Alpine.js Logika Kasir -->
+    <!-- Script Supabase JS SDK & Logika Kasir -->
     <script>
+        const SUPABASE_URL = 'https://lppqzaiipeqomwvzsqvr.supabase.co/rest/v1';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwcHF6YWlpcGVxb213dnpzcXZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNjA5MzAsImV4cCI6MjEwMTkzNjkzMH0.rSKXoseYUe3mtON-_s_pC5YsfVWrxFz3tUkuVTyAOn0';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         function kasirApp() {
             return {
                 kasirTab: 'antrian',
@@ -634,6 +639,66 @@
 
                 formPengeluaran: { id_pengeluaran: 'PK-001', nominal: '', keterangan: '' },
                 
+                async initApp() {
+                    const today = new Date();
+                    this.currentDate = today.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    await this.loadMasterData();
+                },
+
+                async loadMasterData() {
+                    try {
+                        const { data: barang } = await _supabase.from('barang').select('*');
+                        this.barangList = barang || [];
+
+                        const { data: jasa } = await _supabase.from('jasa').select('*');
+                        this.jasaList = jasa || [];
+
+                        const { data: mekanik } = await _supabase.from('mekanik').select('*');
+                        this.mekanikList = mekanik || [];
+
+                        const { data: antrian } = await _supabase.from('antrian').select('*');
+                        let rawAntrian = antrian || [];
+                        this.antrianList = rawAntrian.map(a => {
+                            let k = a.keranjang;
+                            if (typeof k === 'string') {
+                                try { k = JSON.parse(k); } catch(e) { k = []; }
+                            }
+                            return { ...a, keranjang: Array.isArray(k) ? k : [] };
+                        });
+
+                        let nextNo = 1;
+                        if (this.antrianList.length > 0) {
+                            let lastItem = this.antrianList[this.antrianList.length - 1];
+                            if (lastItem && lastItem.no_antrian) {
+                                let num = parseInt(lastItem.no_antrian.replace('A-', ''));
+                                if (!isNaN(num)) {
+                                    nextNo = num + 1;
+                                } else {
+                                    nextNo = this.antrianList.length + 1;
+                                }
+                            } else {
+                                nextNo = this.antrianList.length + 1;
+                            }
+                        }
+                        this.formAntrian.no_antrian = 'A-' + String(nextNo).padStart(3, '0');
+
+                        const { data: tl } = await _supabase.from('transaksi_langsung').select('*');
+                        this.transaksiLangsungList = tl || [];
+
+                        const { data: pengeluaran } = await _supabase.from('pengeluaran').select('*');
+                        this.pengeluaranList = pengeluaran || [];
+                        let nextPk = this.pengeluaranList.length + 1;
+                        this.formPengeluaran.id_pengeluaran = 'PK-' + String(nextPk).padStart(3, '0');
+
+                        const { data: riwayat } = await _supabase.from('riwayat_transaksi').select('*');
+                        this.riwayatList = riwayat || [];
+
+                        this.formTL.no_transaksi = 'TL-' + Math.floor(100 + Math.random() * 900);
+                    } catch (err) {
+                        console.error("Gagal mengambil data Supabase:", err);
+                    }
+                },
+
                 onJasaMekanikChange() {
                     if(!this.tempJasaId) return;
                     let jasaObj = this.jasaList.find(j => j.id == this.tempJasaId);
@@ -696,79 +761,20 @@
                     this.modalInputServis = true;
                 },
 
-                initApp() {
-                    const today = new Date();
-                    this.currentDate = today.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-                    this.loadMasterData();
-                },
-
-                loadMasterData() {
-                    google.script.run.withSuccessHandler(res => {
-                        this.barangList = JSON.parse(res || '[]');
-                    }).getDataFromSupabaseJson("barang");
-
-                    google.script.run.withSuccessHandler(res => {
-                        this.jasaList = JSON.parse(res || '[]');
-                    }).getDataFromSupabaseJson("jasa");
-
-                    google.script.run.withSuccessHandler(res => {
-                        this.mekanikList = JSON.parse(res || '[]');
-                    }).getDataFromSupabaseJson("mekanik");
-
-                    google.script.run.withSuccessHandler(res => {
-                        let rawAntrian = JSON.parse(res || '[]');
-                        this.antrianList = rawAntrian.map(a => {
-                            let k = a.keranjang;
-                            if (typeof k === 'string') {
-                                try { k = JSON.parse(k); } catch(e) { k = []; }
-                            }
-                            return { ...a, keranjang: Array.isArray(k) ? k : [] };
-                        });
-
-                        let nextNo = 1;
-                        if (this.antrianList.length > 0) {
-                            let lastItem = this.antrianList[this.antrianList.length - 1];
-                            if (lastItem && lastItem.no_antrian) {
-                                let num = parseInt(lastItem.no_antrian.replace('A-', ''));
-                                if (!isNaN(num)) {
-                                    nextNo = num + 1;
-                                } else {
-                                    nextNo = this.antrianList.length + 1;
-                                }
-                            } else {
-                                nextNo = this.antrianList.length + 1;
-                            }
-                        }
-                        this.formAntrian.no_antrian = 'A-' + String(nextNo).padStart(3, '0');
-                    }).getDataFromSupabaseJson("antrian");
-
-                    google.script.run.withSuccessHandler(res => {
-                        this.transaksiLangsungList = JSON.parse(res || '[]');
-                    }).getDataFromSupabaseJson("transaksi_langsung");
-
-                    google.script.run.withSuccessHandler(res => {
-                        this.pengeluaranList = JSON.parse(res || '[]');
-                        let nextPk = this.pengeluaranList.length + 1;
-                        this.formPengeluaran.id_pengeluaran = 'PK-' + String(nextPk).padStart(3, '0');
-                    }).getDataFromSupabaseJson("pengeluaran");
-
-                    google.script.run.withSuccessHandler(res => {
-                        this.riwayatList = JSON.parse(res || '[]');
-                    }).getDataFromSupabaseJson("riwayat_transaksi");
-
-                    this.formTL.no_transaksi = 'TL-' + Math.floor(100 + Math.random() * 900);
-                },
-
-                simpanAntrian() {
+                async simpanAntrian() {
                     if (!this.formAntrian.plat_nomor) {
                         alert('Mohon isi plat nomor motor!');
                         return;
                     }
-                    google.script.run.withSuccessHandler(() => {
+
+                    const { error } = await _supabase.from('antrian').insert([this.formAntrian]);
+                    if (error) {
+                        alert('Gagal: ' + error.message);
+                    } else {
                         alert('Antrian berhasil disimpan!');
                         this.formAntrian = { no_antrian: 'A-001', plat_nomor: '', jenis_motor: '', keluhan: '', status: 'antri' };
-                        this.loadMasterData();
-                    }).postDataToSupabaseServer("antrian", this.formAntrian);
+                        await this.loadMasterData();
+                    }
                 },
 
                 tambahBarangKeServis() {
@@ -798,18 +804,23 @@
                     return totalItem + nominalMekanik;
                 },
 
-                simpanProsesServis() {
-                    this.activeAntrian.status = 'proses';
-                    this.activeAntrian.mekanik = this.formServisDetail.mekanik;
-                    this.activeAntrian.nominal_mekanik = this.formServisDetail.nominal_mekanik;
-                    this.activeAntrian.keranjang = JSON.stringify(this.formServisDetail.keranjang);
-                    this.activeAntrian.total_tagihan = this.hitungTotalServisDetail;
+                async simpanProsesServis() {
+                    const payload = {
+                        status: 'proses',
+                        mekanik: this.formServisDetail.mekanik,
+                        nominal_mekanik: this.formServisDetail.nominal_mekanik,
+                        keranjang: JSON.stringify(this.formServisDetail.keranjang),
+                        total_tagihan: this.hitungTotalServisDetail
+                    };
 
-                    google.script.run.withSuccessHandler(() => {
+                    const { error } = await _supabase.from('antrian').update(payload).eq('id', this.activeAntrian.id);
+                    if (error) {
+                        alert('Gagal memperbarui antrian: ' + error.message);
+                    } else {
                         alert('Antrian diperbarui & status menjadi PROSES!');
                         this.modalInputServis = false;
-                        this.loadMasterData();
-                    }).updateAntrianServer(this.activeAntrian);
+                        await this.loadMasterData();
+                    }
                 },
 
                 bukaFormBayarAntrian(item) {
@@ -819,7 +830,7 @@
                     this.modalBayarAntrian = true;
                 },
 
-                prosesBayarAntrianFinal(metode) {
+                async prosesBayarAntrianFinal(metode) {
                     let totalTagihan = Number(this.activeAntrian.total_tagihan || 0);
                     let bayarFinal = metode === 'transfer' ? totalTagihan : Number(this.nominalBayarAntrian || 0);
                     
@@ -830,20 +841,32 @@
 
                     let kembalianFinal = metode === 'transfer' ? 0 : (bayarFinal - totalTagihan > 0 ? bayarFinal - totalTagihan : 0);
 
-                    let payload = {
-                        ...this.activeAntrian,
+                    const payload = {
                         status: statusBayar,
                         metode_pembayaran: metode,
                         bayar: bayarFinal,
                         kembalian: kembalianFinal
                     };
 
-                    google.script.run.withSuccessHandler(() => {
+                    const { error } = await _supabase.from('antrian').update(payload).eq('id', this.activeAntrian.id);
+                    if (error) {
+                        alert('Gagal memproses pembayaran: ' + error.message);
+                    } else {
+                        // Tambahkan riwayat transaksi
+                        await _supabase.from('riwayat_transaksi').insert([{
+                            no_transaksi: this.activeAntrian.no_antrian,
+                            nama_pelanggan: this.activeAntrian.plat_nomor,
+                            plat_nomor: this.activeAntrian.plat_nomor,
+                            mekanik: this.activeAntrian.mekanik,
+                            total_tagihan: totalTagihan,
+                            status: statusBayar
+                        }]);
+
                         let msg = statusBayar.includes('hutang') ? 'Pembayaran disimpan sebagai HUTANG!' : ('Pembayaran ' + metode.toUpperCase() + ' berhasil!');
                         alert(msg);
                         this.modalBayarAntrian = false;
-                        this.loadMasterData();
-                    }).selesaikanAntrianServer(payload);
+                        await this.loadMasterData();
+                    }
                 },
 
                 onJasaTLChange() {
@@ -898,7 +921,7 @@
                     return this.formTL.keranjang.reduce((sum, i) => sum + (Number(i.harga || 0) * Number(i.qty || 1)), 0);
                 },
 
-                simpanTransaksiLangsung() {
+                async simpanTransaksiLangsung() {
                     if(this.formTL.keranjang.length === 0) {
                         alert('Keranjang belanja masih kosong!');
                         return;
@@ -915,50 +938,60 @@
                     let kembalianFinal = metode === 'transfer' ? 0 : (bayarFinal - total > 0 ? bayarFinal - total : 0);
 
                     let payload = {
-                        ...this.formTL,
+                        no_transaksi: this.formTL.no_transaksi,
+                        nama_pelanggan: this.formTL.nama_pelanggan,
+                        plat_nomor: this.formTL.plat_nomor,
                         total_tagihan: total,
                         bayar: bayarFinal,
                         kembalian: kembalianFinal,
                         status: statusBayar,
                         metode_pembayaran: metode,
-                        items: JSON.stringify(this.formTL.keranjang),
-                        created_at: new Date().toISOString()
+                        items: JSON.stringify(this.formTL.keranjang)
                     };
 
-                    google.script.run.withSuccessHandler(() => {
+                    const { error } = await _supabase.from('transaksi_langsung').insert([payload]);
+                    if (error) {
+                        alert('Gagal menyimpan transaksi: ' + error.message);
+                    } else {
+                        await _supabase.from('riwayat_transaksi').insert([{
+                            no_transaksi: this.formTL.no_transaksi,
+                            nama_pelanggan: this.formTL.nama_pelanggan,
+                            plat_nomor: this.formTL.plat_nomor,
+                            mekanik: this.tlMekanik || '-',
+                            total_tagihan: total,
+                            status: statusBayar
+                        }]);
+
                         let msg = statusBayar.includes('hutang') ? 'Transaksi langsung disimpan sebagai HUTANG!' : ('Transaksi langsung berhasil disimpan (' + metode.toUpperCase() + ')!');
                         alert(msg);
                         this.formTL = { no_transaksi: 'TL-' + Math.floor(100 + Math.random() * 900), nama_pelanggan: '', plat_nomor: '', keranjang: [], bayar: 0 };
                         this.tlMekanik = '';
-                        this.loadMasterData();
-                    }).prosesTransaksiPenjualanServer(payload);
+                        await this.loadMasterData();
+                    }
                 },
 
-                simpanPengeluaranKasir() {
+                async simpanPengeluaranKasir() {
                     if(!this.formPengeluaran.nominal) {
                         alert('Mohon isi nominal pengeluaran!');
                         return;
                     }
 
                     let payload = {
-                        id: this.formPengeluaran.id_pengeluaran || ('PK-' + Date.now()),
-                        kategori: this.formPengeluaran.kategori || 'Operasional',
+                        id_pengeluaran: this.formPengeluaran.id_pengeluaran || ('PK-' + Date.now()),
+                        kategori: 'Operasional Kasir',
                         nominal: Number(this.formPengeluaran.nominal || 0),
                         keterangan: this.formPengeluaran.keterangan || '-'
                     };
 
-                    google.script.run
-                        .withSuccessHandler(() => {
-                            alert('Pengeluaran berhasil disimpan!');
-                            this.loadMasterData();
-                            this.formPengeluaran = { id_pengeluaran: '', kategori: '', nominal: '', keterangan: '' };
-                        })
-                        .withFailureHandler(err => {
-                            alert("Error: " + err.message);
-                        })
-                        .simpanPengeluaran(payload);
+                    const { error } = await _supabase.from('pengeluaran').insert([payload]);
+                    if (error) {
+                        alert('Error: ' + error.message);
+                    } else {
+                        alert('Pengeluaran berhasil disimpan!');
+                        this.formPengeluaran = { id_pengeluaran: '', nominal: '', keterangan: '' };
+                        await this.loadMasterData();
+                    }
                 }
-
             };
         }
     </script>
