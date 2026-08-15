@@ -972,13 +972,25 @@
                 },
 
                 async simpanPengeluaranKasir() {
-                    if (!this.formPengeluaran.nominal) {
-                        alert('Mohon isi nominal pengeluaran!');
+                    // 1. Validasi input nominal
+                    if (!this.formPengeluaran.nominal || Number(this.formPengeluaran.nominal) <= 0) {
+                        alert('Mohon isi nominal pengeluaran dengan benar (harus lebih besar dari 0)!');
                         return;
                     }
 
+                    // 2. Proteksi double click / submit ganda
+                    if (this.isSubmitting) return;
+                    this.isSubmitting = true;
+
+                    // 3. Ambil tanggal lokal (Format YYYY-MM-DD) tanpa terpengaruh UTC
+                    const now = new Date();
+                    const year = now.getFullYear();
+                    const month = String(now.getMonth() + 1).padStart(2, '0');
+                    const day = String(now.getDate()).padStart(2, '0');
+                    const todayStr = `${year}-${month}-${day}`;
+
+                    // 4. Pastikan ID Pengeluaran terisi
                     let idVal = this.formPengeluaran.id_pengeluaran || ('PK-' + String((this.pengeluaranList.length || 0) + 1).padStart(3, '0'));
-                    let todayStr = new Date().toISOString().split('T')[0];
 
                     let payload = {
                         id_pengeluaran: idVal,
@@ -988,19 +1000,36 @@
                         tanggal: todayStr
                     };
 
+                    // Helper function untuk reset form & update ID berikutnya
+                    const resetForm = () => {
+                        this.formPengeluaran.nominal = '';
+                        this.formPengeluaran.keterangan = '';
+                        let nextPk = (this.pengeluaranList.length || 0) + 1;
+                        this.formPengeluaran.id_pengeluaran = 'PK-' + String(nextPk).padStart(3, '0');
+                    };
+
                     try {
+                        // Jalankan via Google Apps Script (jika di dalam Apps Script Environment)
                         if (typeof google !== 'undefined' && google.script && google.script.run) {
-                            google.script.run.withSuccessHandler(() => {
-                                alert('Pengeluaran berhasil disimpan!');
-                                this.formPengeluaran.nominal = '';
-                                this.formPengeluaran.keterangan = '';
-                                this.loadMasterData();
-                            }).postDataToSupabaseServer("pengeluaran", payload);
+                            google.script.run
+                                .withSuccessHandler(async () => {
+                                    alert('Pengeluaran berhasil disimpan!');
+                                    resetForm();
+                                    await this.loadMasterData();
+                                    this.isSubmitting = false;
+                                })
+                                .withFailureHandler((err) => {
+                                    alert('Gagal menyimpan via Google Apps Script: ' + err);
+                                    this.isSubmitting = false;
+                                })
+                                .postDataToSupabaseServer("pengeluaran", payload);
                             return;
                         }
 
+                        // Fallback: Kirim langsung via Supabase JS Client
                         let { error } = await _supabase.from('pengeluaran').insert([payload]);
 
+                        // Penanganan jika nama kolom utama di Supabase menggunakan 'id'
                         if (error && error.message.includes('column "id"')) {
                             payload.id = payload.id_pengeluaran;
                             let retry = await _supabase.from('pengeluaran').insert([payload]);
@@ -1011,12 +1040,13 @@
                             alert("Gagal menyimpan ke Supabase: " + error.message);
                         } else {
                             alert('Pengeluaran berhasil disimpan!');
-                            this.formPengeluaran.nominal = '';
-                            this.formPengeluaran.keterangan = '';
+                            resetForm();
                             await this.loadMasterData();
                         }
                     } catch (err) {
                         alert("Terjadi kesalahan sistem: " + err.message);
+                    } finally {
+                        this.isSubmitting = false;
                     }
                 }
             }));
