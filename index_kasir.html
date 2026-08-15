@@ -841,13 +841,35 @@
 
                 bukaFormBayarAntrian(item) {
                     this.activeAntrian = item;
-                    this.nominalBayarAntrian = Number(item.total_tagihan || 0);
+                    let keranjangList = item.keranjang;
+                    if (typeof keranjangList === 'string') {
+                        try { keranjangList = JSON.parse(keranjangList); } catch(e) { keranjangList = []; }
+                    }
+                    
+                    let total = Number(item.total_tagihan || 0);
+                    if ((!total || total === 0) && Array.isArray(keranjangList)) {
+                        total = keranjangList.reduce((sum, i) => sum + (Number(i.harga || i.subtotal || 0) * Number(i.qty || 1)), 0);
+                    }
+
+                    this.activeAntrian.total_tagihan = total;
+                    this.nominalBayarAntrian = total;
                     this.metodeBayarAntrian = 'tunai';
                     this.modalBayarAntrian = true;
                 },
 
                 async prosesBayarAntrianFinal(metode) {
+                    if (!this.activeAntrian) return;
+
+                    let keranjangList = this.activeAntrian.keranjang;
+                    if (typeof keranjangList === 'string') {
+                        try { keranjangList = JSON.parse(keranjangList); } catch(e) { keranjangList = []; }
+                    }
+
                     let totalTagihan = Number(this.activeAntrian.total_tagihan || 0);
+                    if ((!totalTagihan || totalTagihan === 0) && Array.isArray(keranjangList)) {
+                        totalTagihan = keranjangList.reduce((sum, i) => sum + (Number(i.harga || i.subtotal || 0) * Number(i.qty || 1)), 0);
+                    }
+
                     let bayarFinal = metode === 'transfer' ? totalTagihan : Number(this.nominalBayarAntrian || 0);
                     
                     let statusBayar = 'selesai ' + metode;
@@ -861,7 +883,8 @@
                         status: statusBayar,
                         metode_pembayaran: metode,
                         bayar: bayarFinal,
-                        kembalian: kembalianFinal
+                        kembalian: kembalianFinal,
+                        total_tagihan: totalTagihan
                     };
 
                     const { error } = await _supabase
@@ -872,6 +895,19 @@
                     if (error) {
                         alert('Gagal memproses pembayaran: ' + error.message);
                     } else {
+                        try {
+                            await _supabase.from('riwayat_transaksi').insert([{
+                                no_transaksi: this.activeAntrian.no_antrian,
+                                plat_nomor: this.activeAntrian.plat_nomor,
+                                nama_pelanggan: this.activeAntrian.jenis_motor || '-',
+                                mekanik: this.activeAntrian.mekanik || '-',
+                                total_tagihan: totalTagihan,
+                                status: statusBayar
+                            }]);
+                        } catch(e) {
+                            console.error('Simpan riwayat:', e);
+                        }
+
                         let msg = statusBayar.includes('hutang') ? 'Pembayaran disimpan sebagai HUTANG!' : ('Pembayaran ' + metode.toUpperCase() + ' berhasil!');
                         alert(msg);
                         this.modalBayarAntrian = false;
@@ -929,6 +965,55 @@
 
                 get totalTagihanTL() {
                     return this.formTL.keranjang.reduce((sum, i) => sum + (Number(i.harga || 0) * Number(i.qty || 1)), 0);
+                },
+
+                async simpanTransaksiLangsung() {
+                    if (!this.formTL.keranjang || this.formTL.keranjang.length === 0) {
+                        alert('Keranjang belanja masih kosong!');
+                        return;
+                    }
+                    
+                    let totalTagihan = this.totalTagihanTL;
+                    let bayarFinal = this.tlMetodeBayar === 'transfer' ? totalTagihan : Number(this.formTL.bayar || 0);
+                    let statusBayar = 'selesai ' + this.tlMetodeBayar;
+                    if (this.tlMetodeBayar === 'tunai' && bayarFinal < totalTagihan) {
+                        statusBayar = 'hutang';
+                    }
+                    let kembalianFinal = this.tlMetodeBayar === 'transfer' ? 0 : (bayarFinal - totalTagihan > 0 ? bayarFinal - totalTagihan : 0);
+
+                    let payload = {
+                        no_transaksi: this.formTL.no_transaksi,
+                        nama_pelanggan: this.formTL.nama_pelanggan || 'Umum',
+                        plat_nomor: this.formTL.plat_nomor || '-',
+                        items: JSON.stringify(this.formTL.keranjang),
+                        total_tagihan: totalTagihan,
+                        metode_pembayaran: this.tlMetodeBayar,
+                        bayar: bayarFinal,
+                        kembalian: kembalianFinal,
+                        status: statusBayar
+                    };
+
+                    const { error } = await _supabase.from('transaksi_langsung').insert([payload]);
+
+                    if (error) {
+                        alert('Gagal menyimpan transaksi langsung: ' + error.message);
+                    } else {
+                        try {
+                            await _supabase.from('riwayat_transaksi').insert([{
+                                no_transaksi: payload.no_transaksi,
+                                plat_nomor: payload.plat_nomor,
+                                nama_pelanggan: payload.nama_pelanggan,
+                                mekanik: this.tlMekanik || '-',
+                                total_tagihan: totalTagihan,
+                                status: statusBayar
+                            }]);
+                        } catch(e) {}
+
+                        alert('Transaksi langsung berhasil disimpan!');
+                        this.formTL = { no_transaksi: 'TL-' + Math.floor(100 + Math.random() * 900), nama_pelanggan: '', plat_nomor: '', keranjang: [], bayar: 0 };
+                        this.tlMekanik = '';
+                        this.loadMasterData();
+                    }
                 },
 
                 async simpanPengeluaranKasir() {
