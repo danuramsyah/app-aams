@@ -810,10 +810,9 @@
                 },
 
                 get hitungTotalServisDetail() {
-                    let totalItem = this.formServisDetail.keranjang.reduce((sum, i) => sum + (Number(i.harga || 0) * Number(i.qty || 1)), 0);
-                    let nominalMekanik = Number(this.formServisDetail.nominal_mekanik || 0);
-                    return totalItem + nominalMekanik;
-                },
+                    get hitungTotalServisDetail() {
+    return this.formServisDetail.keranjang.reduce((sum, i) => sum + (Number(i.harga || 0) * Number(i.qty || 1)), 0);
+},
 
                 async simpanProsesServis() {
                     let updateData = {
