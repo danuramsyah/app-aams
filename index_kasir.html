@@ -519,14 +519,14 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <template x-for="p in pengeluaranList" :key="p.id || p.id_pengeluaran">
-                                        <tr class="border-b hover:bg-gray-50">
-                                            <td class="p-2 font-mono font-bold text-blue-600" x-text="p.id || p.id_pengeluaran"></td>
-                                            <td class="p-2" x-text="p.tanggal || (p.created_at ? p.created_at.split('T')[0] : '-')"></td>
-                                            <td class="p-2" x-text="p.keterangan"></td>
-                                            <td class="p-2 text-right font-bold text-red-600" x-text="'Rp ' + Number(p.nominal || 0).toLocaleString()"></td>
-                                        </tr>
-                                    </template>
+                                    <template x-for="p in pengeluaranList" :key="p.id_pengeluaran">
+    <tr class="border-b hover:bg-gray-50">
+        <td class="p-2 font-mono font-bold text-blue-600" x-text="p.id_pengeluaran"></td>
+        <td class="p-2" x-text="p.tanggal || (p.created_at ? p.created_at.split('T')[0] : '-')"></td>
+        <td class="p-2" x-text="p.keterangan"></td>
+        <td class="p-2 text-right font-bold text-red-600" x-text="'Rp ' + Number(p.nominal || 0).toLocaleString()"></td>
+    </tr>
+</template>
                                     <template x-if="pengeluaranList.length === 0">
                                         <tr><td colspan="4" class="p-4 text-center text-gray-400">Belum ada data pengeluaran.</td></tr>
                                     </template>
@@ -931,9 +931,8 @@
     let idVal = this.formPengeluaran.id_pengeluaran || ('PK-' + String((this.pengeluaranList.length || 0) + 1).padStart(3, '0'));
     let todayStr = new Date().toISOString().split('T')[0];
 
-    // Payload awal (mencoba kirim ID teks "PK-003")
+    // Payload bersih: Hanya menggunakan id_pengeluaran
     let payload = {
-        id: idVal,
         id_pengeluaran: idVal,
         kategori: 'Operasional',
         nominal: Number(this.formPengeluaran.nominal || 0),
@@ -942,7 +941,7 @@
     };
 
     try {
-        // 1. Jika running di lingkungan Google Apps Script
+        // 1. Jika running di Google Apps Script
         if (typeof google !== 'undefined' && google.script && google.script.run) {
             google.script.run.withSuccessHandler(() => {
                 alert('Pengeluaran berhasil disimpan!');
@@ -953,26 +952,12 @@
             return;
         }
 
-        // 2. Jika running langsung di GitHub Pages (Direct Supabase SDK)
-        let { error } = await _supabase.from('pengeluaran').insert([payload]);
-
-        // PERBAIKAN OTOMATIS 1: Jika kolom 'id' di Supabase bertipe INTEGER/BIGINT (Bukan String)
-        if (error && (error.code === '22P02' || error.message.includes('invalid input syntax'))) {
-            payload.id = Date.now(); // Menggunakan Angka Timestamp (misal: 1786360930)
-            let retry1 = await _supabase.from('pengeluaran').insert([payload]);
-            error = retry1.error;
-        }
-
-        // PERBAIKAN OTOMATIS 2: Jika kolom 'id' di Supabase diset Auto-Increment (Identity)
-        if (error && error.message.includes('violates not-null constraint')) {
-            delete payload.id; // Hapus properti 'id' agar database yang mengisi otomatis
-            let retry2 = await _supabase.from('pengeluaran').insert([payload]);
-            error = retry2.error;
-        }
+        // 2. Jika running langsung via Supabase SDK (GitHub Pages)
+        const { error } = await _supabase.from('pengeluaran').insert([payload]);
 
         if (error) {
             alert("Gagal menyimpan ke Supabase: " + error.message);
-            console.error("Detail Error Supabase:", error);
+            console.error("Detail Error:", error);
         } else {
             alert('Pengeluaran berhasil disimpan!');
             this.formPengeluaran.nominal = '';
