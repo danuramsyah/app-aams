@@ -273,11 +273,9 @@
             var errorMsg = document.getElementById('errorMsg');
 
             if (currentRole === 'admin' && password === 'admin123') {
-                var urlAdmin = "https://script.google.com/macros/s/AKfycbwS4olB1-3xMbSUr69GH3uQr2pXO_eRqR68Nd0B8yU_xQw5PuloTc9l7igF6Fanga11ew/exec";
-                window.location.href = urlAdmin;
+                window.location.href = "index_admin.html";
             } else if (currentRole === 'kasir' && password === 'kasir123') {
-                var urlKasir = "https://script.google.com/macros/s/AKfycbwICIfAlVu0S9R-cy8ShwcjKrWV8xzqoxVahkrpv9gE_jKMO0JkNl875-8GzbZUfReETQ/exec";
-                window.location.href = urlKasir;
+                window.location.href = "index_kasir.html";
             } else {
                 errorMsg.style.display = 'block';
                 document.getElementById('modalPassword').focus();
