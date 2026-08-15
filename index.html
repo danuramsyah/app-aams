@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bengkel Pintar - Login</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); 
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            color: #1e293b;
+        }
+        .login-card {
+            background: #ffffff;
+            padding: 40px 32px;
+            border-radius: 20px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            width: 380px;
+            text-align: center;
+            border: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .login-card h2 { 
+            color: #0f172a; 
+            margin-bottom: 24px; 
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.025em;
+        }
+        .btn {
+            width: 100%;
+            padding: 14px 20px;
+            border: none;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-bottom: 12px;
+            font-size: 15px;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px -2px rgba(0, 0, 0, 0.15);
+        }
+        .btn:active {
+            transform: translateY(0);
+        }
+        .btn-admin { 
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%); 
+        }
+        .btn-admin:hover { 
+            background: linear-gradient(135deg, #0369a1 0%, #075985 100%); 
+        }
+        .btn-kasir { 
+            background: linear-gradient(135deg, #16a34a 0%, #15803d 100%); 
+        }
+        .btn-kasir:hover { 
+            background: linear-gradient(135deg, #15803d 100%, #166534 100%); 
+        }
+        .info { 
+            font-size: 12px; 
+            color: #64748b; 
+            margin-top: 24px; 
+            line-height: 1.5; 
+            text-align: left;
+            background: #f8fafc;
+            padding: 14px;
+            border-radius: 10px;
+            border: 1px solid #f1f5f9;
+        }
+        .info p b {
+            color: #334155;
+        }
+        .info code {
+            background: #e2e8f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #0f172a;
+            font-weight: 500;
+        }
+
+        /* Custom Modal Styling */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.6);
+            backdrop-filter: blur(4px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-box {
+            background: #ffffff;
+            width: 400px;
+            padding: 32px;
+            border-radius: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            text-align: left;
+            transform: scale(0.95);
+            transition: all 0.3s ease;
+        }
+        .modal-overlay.active .modal-box {
+            transform: scale(1);
+        }
+        .modal-box h3 {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 8px;
+        }
+        .modal-box p {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 20px;
+        }
+        .modal-input-group {
+            position: relative;
+            margin-bottom: 20px;
+        }
+        .modal-input-group svg {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #94a3b8;
+        }
+        .modal-input {
+            width: 100%;
+            padding: 12px 14px 12px 42px;
+            border: 1px solid #cbd5e1;
+            border-radius: 10px;
+            font-size: 15px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            outline: none;
+            transition: all 0.2s ease;
+        }
+        .modal-input:focus {
+            border-color: #0284c7;
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+        }
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+        .modal-btn {
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s ease;
+        }
+        .modal-btn-cancel {
+            background: #f1f5f9;
+            color: #475569;
+        }
+        .modal-btn-cancel:hover {
+            background: #e2e8f0;
+        }
+        .modal-btn-submit {
+            background: #0284c7;
+            color: #ffffff;
+        }
+        .modal-btn-submit:hover {
+            background: #0369a1;
+        }
+        .error-msg {
+            color: #dc2626;
+            font-size: 12px;
+            margin-top: -12px;
+            margin-bottom: 16px;
+            display: none;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <h2>Bengkel Pintar</h2>
+        <button class="btn btn-admin" onclick="openModal('admin')">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            Login sebagai ADMIN
+        </button>
+        <button class="btn btn-kasir" onclick="openModal('kasir')">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+            Login sebagai KASIR
+        </button>
+        <div class="info">
+            <p><b>Password Default:</b></p>
+            <p style="margin-top: 4px;">Admin: <code>admin123</code> | Kasir: <code>kasir123</code></p>
+        </div>
+    </div>
+
+    <!-- Custom Modal Popup -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="modal-box">
+            <h3 id="modalTitle">Login Admin</h3>
+            <p id="modalDesc">Masukkan password admin Anda untuk melanjutkan.</p>
+            <div class="modal-input-group">
+                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                <input type="password" id="modalPassword" class="modal-input" placeholder="Masukkan password..." onkeydown="handleKeyDown(event)">
+            </div>
+            <div class="error-msg" id="errorMsg">Password salah!</div>
+            <div class="modal-actions">
+                <button class="modal-btn modal-btn-cancel" onclick="closeModal()">Batal</button>
+                <button class="modal-btn modal-btn-submit" onclick="submitLogin()">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentRole = '';
+
+        function openModal(role) {
+            currentRole = role;
+            const modal = document.getElementById('loginModal');
+            const title = document.getElementById('modalTitle');
+            const desc = document.getElementById('modalDesc');
+            const passInput = document.getElementById('modalPassword');
+            const errorMsg = document.getElementById('errorMsg');
+
+            passInput.value = '';
+            errorMsg.style.display = 'none';
+
+            if (role === 'admin') {
+                title.innerText = 'Login Admin';
+                desc.innerText = 'Masukkan password admin Anda untuk melanjutkan.';
+            } else {
+                title.innerText = 'Login Kasir';
+                desc.innerText = 'Masukkan password kasir Anda untuk melanjutkan.';
+            }
+
+            modal.classList.add('active');
+            passInput.focus();
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('loginModal');
+            modal.classList.remove('active');
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === 'Enter') {
+                submitLogin();
+            }
+        }
+
+        function submitLogin() {
+            var password = document.getElementById('modalPassword').value;
+            var errorMsg = document.getElementById('errorMsg');
+
+            if (currentRole === 'admin' && password === 'admin123') {
+                var urlAdmin = "https://script.google.com/macros/s/AKfycbwS4olB1-3xMbSUr69GH3uQr2pXO_eRqR68Nd0B8yU_xQw5PuloTc9l7igF6Fanga11ew/exec";
+                window.location.href = urlAdmin;
+            } else if (currentRole === 'kasir' && password === 'kasir123') {
+                var urlKasir = "https://script.google.com/macros/s/AKfycbwICIfAlVu0S9R-cy8ShwcjKrWV8xzqoxVahkrpv9gE_jKMO0JkNl875-8GzbZUfReETQ/exec";
+                window.location.href = urlKasir;
+            } else {
+                errorMsg.style.display = 'block';
+                document.getElementById('modalPassword').focus();
+            }
+        }
+    </script>
+</body>
+</html>

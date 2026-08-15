@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aplikasi Bengkel Pintar - Admin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-100 font-sans" x-data="bengkelApp()" x-init="initApp()">
+
+    <!-- DASHBOARD UTAMA -->
+    <div class="min-h-screen flex flex-col">
+        <header class="bg-blue-600 text-white shadow-md p-4 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <h1 class="text-lg font-bold">🛠️ Sistem Bengkel Pintar - Admin</h1>
+                <span class="bg-blue-500 text-xs px-2 py-1 rounded uppercase font-semibold" x-text="'Role: ' + userRole"></span>
+            </div>
+        </header>
+
+        <div class="flex flex-1 flex-col md:flex-row">
+            <!-- Sidebar Admin -->
+            <aside class="w-full md:w-64 bg-white shadow-md p-4 space-y-2">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Menu Admin</p>
+                <button @click="adminTab = 'barang'" :class="adminTab === 'barang' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">📦 Master Barang</button>
+                <button @click="adminTab = 'pembelian'" :class="adminTab === 'pembelian' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">📦 Barang Masuk (Restock)</button>
+                <button @click="adminTab = 'master_lain'" :class="adminTab === 'master_lain' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">⚙️ Mekanik, Jasa & Supplier</button>
+                <button @click="adminTab = 'pengeluaran'" :class="adminTab === 'pengeluaran' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">💸 Input Pengeluaran</button>
+                <button @click="adminTab = 'riwayat'" :class="adminTab === 'riwayat' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">📜 Riwayat Transaksi</button>
+                <button @click="adminTab = 'laporan'" :class="adminTab === 'laporan' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">📊 Laporan Keuangan</button>
+            </aside>
+
+
+            <!-- Main Content -->
+            <main class="flex-1 p-6 overflow-y-auto">
+                
+                <!-- 1. MASTER BARANG -->
+                <div x-show="userRole === 'admin' && adminTab === 'barang'" class="space-y-6">
+                    <h2 class="text-xl font-bold text-gray-800">Manajemen Stok Barang & Sparepart</h2>
+                    <div class="bg-white p-5 rounded-lg shadow space-y-4">
+                        <h3 class="font-semibold text-gray-700 border-b pb-2">Form Input Stok Data Barang</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div>
+                                <label class="block text-gray-600 mb-1">Kode Barang</label>
+                                <input type="text" x-model="formBarang.kode_barang" readonly class="border p-2 rounded w-full bg-gray-100 font-bold">
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 mb-1">Nama Barang</label>
+                                <input type="text" x-model="formBarang.nama_barang" placeholder="Nama Barang" class="border p-2 rounded w-full">
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 mb-1">Supplier</label>
+                                <select x-model="formBarang.supplier" class="border p-2 rounded w-full">
+                                    <option value="">-- Pilih Supplier --</option>
+                                    <template x-for="s in supplierList" :key="s.id">
+                                        <option :value="s.nama || s.nama_supplier" x-text="s.nama || s.nama_supplier"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 mb-1">Harga Beli</label>
+                                <input type="number" x-model="formBarang.harga_beli" class="border p-2 rounded w-full">
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 mb-1">Harga Jual</label>
+                                <input type="number" x-model="formBarang.harga_jual" class="border p-2 rounded w-full">
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 mb-1">Stok Awal</label>
+                                <input type="number" x-model="formBarang.stok" class="border p-2 rounded w-full">
+                            </div>
+                        </div>
+                        <button @click="simpanBarang()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold">Simpan Data</button>
+                    </div>
+                    
+                    <div class="bg-white p-5 rounded-lg shadow">
+                        <h3 class="font-semibold text-gray-700 mb-3">Daftar Stok Barang</h3>
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100 border-b">
+                                    <th class="p-2">Kode</th>
+                                    <th class="p-2">Nama Barang</th>
+                                    <th class="p-2">Supplier</th>
+                                    <th class="p-2">Harga Beli</th>
+                                    <th class="p-2">Harga Jual</th>
+                                    <th class="p-2">Stok</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="b in barangList" :key="b.id">
+                                    <tr class="border-b">
+                                        <td class="p-2 font-mono font-bold" x-text="b.kode_barang"></td>
+                                        <td class="p-2" x-text="b.nama_barang || b.nama"></td>
+                                        <td class="p-2" x-text="b.supplier || '-'"></td>
+                                        <td class="p-2" x-text="'Rp ' + Number(b.harga_beli || 0).toLocaleString()"></td>
+                                        <td class="p-2" x-text="'Rp ' + Number(b.harga_jual || 0).toLocaleString()"></td>
+                                        <td class="p-2 font-bold" x-text="b.stok"></td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2. BARANG MASUK (RESTOCK) -->
+                <div x-show="userRole === 'admin' && adminTab === 'pembelian'" class="space-y-6">
+                    <h2 class="text-xl font-bold text-gray-800">Manajemen Barang Masuk (Restock)</h2>
+                    
+                    <!-- Form Input -->
+                    <div class="bg-white p-5 rounded-lg shadow space-y-4">
+                        <h3 class="font-semibold text-gray-700 border-b pb-2">Form Input Barang Masuk</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-gray-600 mb-1">Pilih Barang</label>
+                                <select x-model="formRestock.kode_barang" class="border p-2 rounded w-full">
+                                    <option value="">-- Pilih Barang --</option>
+                                    <template x-for="b in barangList" :key="b.id">
+                                        <option :value="b.kode_barang" x-text="b.kode_barang + ' - ' + (b.nama_barang || b.nama)"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 mb-1">Metode Pembayaran</label>
+                                <select x-model="formRestock.metode_pembayaran" class="border p-2 rounded w-full">
+                                    <option value="Tunai">Tunai</option>
+                                    <option value="Tempo">Tempo</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 mb-1">Jumlah Masuk</label>
+                                <input type="number" x-model="formRestock.jumlah" placeholder="Contoh: 10" class="border p-2 rounded w-full">
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 mb-1">Harga Beli Satuan (Rp)</label>
+                                <input type="number" x-model="formRestock.harga_beli" placeholder="Contoh: 50000" class="border p-2 rounded w-full">
+                            </div>
+                            <div x-show="formRestock.metode_pembayaran === 'Tempo'" class="md:col-span-2">
+                                <label class="block text-gray-600 mb-1">Tanggal Jatuh Tempo</label>
+                                <input type="date" x-model="formRestock.tanggal_jatuh_tempo" class="border p-2 rounded w-full">
+                            </div>
+                        </div>
+                        <button @click="simpanRestock()" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-green-700 transition">Proses Barang Masuk</button>
+                    </div>
+
+                    <!-- Tabel Daftar Input Barang Masuk -->
+                    <div class="bg-white p-5 rounded-lg shadow space-y-3">
+                        <h3 class="font-semibold text-gray-700 border-b pb-2">Daftar Input Barang Masuk</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-100 border-b text-gray-600">
+                                        <th class="p-2">Tanggal</th>
+                                        <th class="p-2">Kode / Barang</th>
+                                        <th class="p-2">Supplier</th>
+                                        <th class="p-2">Jumlah</th>
+                                        <th class="p-2">Total Bayar</th>
+                                        <th class="p-2">Metode</th>
+                                        <th class="p-2">Jatuh Tempo</th>
+                                        <th class="p-2">Status</th>
+                                        <th class="p-2 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="item in pembelianList" :key="item.id">
+                                        <tr class="border-b hover:bg-gray-50">
+                                            <td class="p-2" x-text="item.created_at ? item.created_at.split('T')[0] : '-' "></td>
+                                            <td class="p-2 font-mono font-bold" x-text="item.kode_barang"></td>
+                                            <td class="p-2" x-text="item.supplier || '-' "></td>
+                                            <td class="p-2" x-text="item.jumlah"></td>
+                                            <td class="p-2" x-text="'Rp ' + Number(item.total_bayar || 0).toLocaleString()"></td>
+                                            <td class="p-2" x-text="item.metode_pembayaran"></td>
+                                            <td class="p-2" x-text="item.tanggal_jatuh_tempo || '-' "></td>
+                                            <td class="p-2">
+                                                <span class="px-2 py-1 rounded text-xs font-bold"
+                                                      :class="item.metode_pembayaran === 'Tempo' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'"
+                                                      x-text="item.metode_pembayaran === 'Tempo' ? 'Hutang' : 'Lunas'">
+                                                </span>
+                                            </td>
+                                            <td class="p-2 text-center space-x-1">
+                                                <button @click="editPembelian(item)" class="bg-yellow-500 text-white px-2 py-1 rounded text-xs hover:bg-yellow-600">Edit</button>
+                                                <button x-show="item.metode_pembayaran === 'Tempo'" @click="bayarHutang(item)" class="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700">Bayar</button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. MEKANIK, JASA & SUPPLIER -->
+                <div x-show="userRole === 'admin' && adminTab === 'master_lain'" class="space-y-6">
+                    <h2 class="text-xl font-bold text-gray-800">Master Data: Mekanik, Jasa & Supplier</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white p-5 rounded-lg shadow space-y-3">
+                            <h3 class="font-semibold text-gray-700 border-b pb-2">Input Mekanik</h3>
+                            <input type="text" x-model="inputMekanikNama" placeholder="Nama Mekanik" class="border p-2 rounded w-full text-sm">
+                            <button @click="tambahMekanik()" class="w-full bg-blue-600 text-white py-2 rounded text-sm font-bold">Simpan Mekanik</button>
+                            <ul class="space-y-1 text-sm pt-2 max-h-48 overflow-y-auto">
+                                <template x-for="m in mekanikList" :key="m.id">
+                                    <li class="bg-gray-50 p-2 rounded" x-text="m.nama || m.nama_mekanik"></li>
+                                </template>
+                            </ul>
+                        </div>
+                        <div class="bg-white p-5 rounded-lg shadow space-y-3">
+                            <h3 class="font-semibold text-gray-700 border-b pb-2">Input Jasa Servis</h3>
+                            <input type="text" x-model="inputJasaNama" placeholder="Nama Jasa" class="border p-2 rounded w-full text-sm">
+                            <button @click="tambahJasa()" class="w-full bg-blue-600 text-white py-2 rounded text-sm font-bold">Simpan Jasa</button>
+                            <ul class="space-y-1 text-sm pt-2 max-h-48 overflow-y-auto">
+                                <template x-for="j in jasaList" :key="j.id">
+                                    <li class="bg-gray-50 p-2 rounded" x-text="j.nama_jasa || j.nama"></li>
+                                </template>
+                            </ul>
+                        </div>
+                        <div class="bg-white p-5 rounded-lg shadow space-y-3">
+                            <h3 class="font-semibold text-gray-700 border-b pb-2">Input Supplier</h3>
+                            <input type="text" x-model="formSupplier.nama" placeholder="Nama Supplier" class="border p-2 rounded w-full text-sm">
+                            <input type="text" x-model="formSupplier.alamat" placeholder="Alamat" class="border p-2 rounded w-full text-sm">
+                            <input type="text" x-model="formSupplier.telp" placeholder="No Telp" class="border p-2 rounded w-full text-sm">
+                            <button @click="tambahSupplier()" class="w-full bg-blue-600 text-white py-2 rounded text-sm font-bold">Simpan Supplier</button>
+                            <ul class="space-y-1 text-sm pt-2 max-h-48 overflow-y-auto">
+                                <template x-for="s in supplierList" :key="s.id">
+                                    <li class="bg-gray-50 p-2 rounded" x-text="(s.nama || s.nama_supplier || 'Tanpa Nama') + ' (' + (s.telp || 'Tanpa Telp') + ')'"></li>
+                                </template>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 4. PENGELUARAN & PENDAPATAN MEKANIK -->
+                <div x-show="userRole === 'admin' && adminTab === 'pengeluaran'" class="space-y-6">
+                    <h2 class="text-xl font-bold text-gray-800">Manajemen Pengeluaran & Pendapatan Mekanik</h2>
+                    
+                    <!-- Form Input Pengeluaran -->
+                    <div class="bg-white p-5 rounded-lg shadow space-y-4">
+                        <h3 class="font-semibold text-gray-700 border-b pb-2">Form Input Pengeluaran</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <input type="text" x-model="formPengeluaran.id" readonly class="border p-2 rounded w-full bg-gray-100 font-bold">
+                            <select x-model="formPengeluaran.kategori" class="border p-2 rounded w-full">
+                                <option value="gaji mekanik">Gaji Mekanik</option>
+                                <option value="operasional">Operasional</option>
+                                <option value="lainnya">Lainnya</option>
+                            </select>
+                            <input type="number" x-model="formPengeluaran.nominal" placeholder="Nominal (Rp)" class="border p-2 rounded w-full">
+                            <input type="text" x-model="formPengeluaran.keterangan" placeholder="Keterangan" class="border p-2 rounded w-full">
+                        </div>
+                        <button @click="simpanPengeluaran()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-blue-700 transition">Simpan Pengeluaran</button>
+                    </div>
+
+                    <!-- FORM & TABEL PENDAPATAN MEKANIK PER HARI -->
+                    <div class="bg-white p-5 rounded-lg shadow space-y-4">
+                        <h3 class="font-semibold text-gray-700 border-b pb-2">Input & Daftar Pendapatan Mekanik per Hari</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div>
+                                <label class="block text-gray-600 mb-1">Pilih Mekanik</label>
+                                <select x-model="formMekanikHarian.nama_mekanik" class="border p-2 rounded w-full">
+                                    <option value="">-- Pilih Mekanik --</option>
+                                    <template x-for="m in mekanikList" :key="m.id">
+                                        <option :value="m.nama || m.nama_mekanik" x-text="m.nama || m.nama_mekanik"></option>
+                                    </template>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 mb-1">Tanggal</label>
+                                <input type="date" x-model="formMekanikHarian.tanggal" class="border p-2 rounded w-full">
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 mb-1">Nominal Pendapatan (Rp)</label>
+                                <input type="number" x-model="formMekanikHarian.pendapatan" placeholder="Contoh: 150000" class="border p-2 rounded w-full">
+                            </div>
+                        </div>
+                        <button @click="simpanPendapatanMekanik()" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-green-700 transition">Simpan Pendapatan Mekanik</button>
+
+                        <!-- Tabel Daftar Pendapatan Mekanik -->
+                        <div class="overflow-x-auto pt-4">
+                            <table class="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-100 border-b text-gray-600">
+                                        <th class="p-2">Tanggal</th>
+                                        <th class="p-2">Nama Mekanik</th>
+                                        <th class="p-2">Pendapatan</th>
+                                        <th class="p-2">Status</th>
+                                        <th class="p-2 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="item in pendapatanMekanikList" :key="item.id">
+                                        <tr class="border-b hover:bg-gray-50">
+                                            <td class="p-2" x-text="item.tanggal || '-'"></td>
+                                            <td class="p-2 font-bold" x-text="item.nama_mekanik"></td>
+                                            <td class="p-2 text-blue-600 font-bold" x-text="'Rp ' + Number(item.pendapatan || 0).toLocaleString()"></td>
+                                            <td class="p-2">
+                                                <span class="px-2 py-1 rounded text-xs font-bold"
+                                                      :class="item.status === 'Lunas' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'"
+                                                      x-text="item.status || 'Belum Bayar'">
+                                                </span>
+                                            </td>
+                                            <td class="p-2 text-center">
+                                                <button x-show="item.status !== 'Lunas'" @click="bayarMekanik(item)" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 font-bold">Bayar</button>
+                                                <span x-show="item.status === 'Lunas'" class="text-xs text-gray-400 font-semibold">Selesai</span>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. RIWAYAT TRANSAKSI -->
+                <div x-show="userRole === 'admin' && adminTab === 'riwayat'" class="space-y-6">
+                    <h2 class="text-xl font-bold text-gray-800">Riwayat Transaksi Barang Masuk (Lunas)</h2>
+                    <div class="bg-white p-5 rounded-lg shadow">
+                        <table class="w-full text-left text-sm border-collapse">
+                            <thead>
+                                <tr class="bg-gray-100 border-b text-gray-600">
+                                    <th class="p-2">Tanggal</th>
+                                    <th class="p-2">ID / Kode Barang</th>
+                                    <th class="p-2">Supplier</th>
+                                    <th class="p-2">Jumlah</th>
+                                    <th class="p-2">Total Bayar</th>
+                                    <th class="p-2">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <template x-for="t in pembelianList.filter(item => item.metode_pembayaran === 'Tunai')" :key="t.id">
+                                    <tr class="border-b hover:bg-gray-50">
+                                        <td class="p-2" x-text="t.created_at ? t.created_at.split('T')[0] : '-' "></td>
+                                        <td class="p-2 font-mono font-bold" x-text="t.kode_barang"></td>
+                                        <td class="p-2" x-text="t.supplier || '-'"></td>
+                                        <td class="p-2" x-text="t.jumlah"></td>
+                                        <td class="p-2 font-bold text-blue-600" x-text="'Rp ' + Number(t.total_bayar || 0).toLocaleString()"></td>
+                                        <td class="p-2">
+                                            <span class="px-2 py-1 rounded text-xs font-bold bg-green-100 text-green-600">Lunas</span>
+                                        </td>
+                                    </tr>
+                                </template>
+                                <template x-if="pembelianList.filter(item => item.metode_pembayaran === 'Tunai').length === 0">
+                                    <tr>
+                                        <td colspan="6" class="p-4 text-center text-gray-400">Belum ada riwayat transaksi lunas.</td>
+                                    </tr>
+                                </template>
+                                <template x-for="t in pendapatanMekanikList.filter(item => item.status === 'Lunas')" :key="'mekanik-' + t.id">
+                                    <tr class="border-b hover:bg-gray-50">
+                                        <td class="p-2" x-text="t.tanggal || '-'"></td>
+                                        <td class="p-2 font-mono font-bold" x-text="'Gaji/Jasa - ' + t.nama_mekanik"></td>
+                                        <td class="p-2">Mekanik</td>
+                                        <td class="p-2">-</td>
+                                        <td class="p-2 font-bold text-blue-600" x-text="'Rp ' + Number(t.pendapatan || 0).toLocaleString()"></td>
+                                        <td class="p-2">
+                                            <span class="px-2 py-1 rounded text-xs font-bold bg-green-100 text-green-600">Lunas (Mekanik)</span>
+                                        </td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 6. LAPORAN KEUANGAN -->
+                <div x-show="userRole === 'admin' && adminTab === 'laporan'" class="space-y-6">
+                    <h2 class="text-xl font-bold text-gray-800">Laporan Keuangan</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div class="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
+                            <p class="text-xs text-gray-500">Pemasukan Kotor</p>
+                            <p class="text-lg font-bold">Rp 12.500.000</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500">
+                            <p class="text-xs text-gray-500">Modal Terjual (HPP)</p>
+                            <p class="text-lg font-bold">Rp 8.000.000</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow border-l-4 border-red-500">
+                            <p class="text-xs text-gray-500">Total Pengeluaran</p>
+                            <p class="text-lg font-bold">Rp 2.000.000</p>
+                        </div>
+                        <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
+                            <p class="text-xs text-gray-500">Pemasukan Bersih</p>
+                            <p class="text-lg font-bold text-blue-600">Rp 2.500.000</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        function bengkelApp() {
+            return {
+                userRole: 'admin',
+                adminTab: 'barang',
+                barangList: [], supplierList: [], mekanikList: [], jasaList: [], pengeluaranList: [], transaksiList: [], pembelianList: [],
+                pendapatanMekanikList: [],
+                formMekanikHarian: { nama_mekanik: '', tanggal: '', pendapatan: '', status: 'Belum Bayar' },
+                
+                // Data Form
+                formBarang: { kode_barang: 'BRG-001', nama_barang: '', supplier: '', harga_beli: '', harga_jual: '', stok: '' },
+                formRestock: { kode_barang: '', jumlah: '', harga_beli: '', metode_pembayaran: 'Tunai', tanggal_jatuh_tempo: '', total_bayar: 0 },
+                inputMekanikNama: '', inputJasaNama: '',
+                formSupplier: { nama: '', alamat: '', telp: '' },
+                formPengeluaran: { id: 'PA-001', kategori: 'operasional', nominal: '', keterangan: '' },
+                
+                initApp() { this.loadData(); },
+                
+                loadData() {
+                    google.script.run.withSuccessHandler(res => {
+                        this.barangList = JSON.parse(res || '[]');
+                        let nextNum = this.barangList.length + 1;
+                        this.formBarang.kode_barang = 'BRG-' + String(nextNum).padStart(3, '0');
+                    }).getDataFromSupabaseJson("barang");
+
+                    google.script.run.withSuccessHandler(res => this.supplierList = JSON.parse(res || '[]')).getDataFromSupabaseJson("supplier");
+                    google.script.run.withSuccessHandler(res => this.mekanikList = JSON.parse(res || '[]')).getDataFromSupabaseJson("mekanik");
+                    google.script.run.withSuccessHandler(res => this.jasaList = JSON.parse(res || '[]')).getDataFromSupabaseJson("jasa");
+                    google.script.run.withSuccessHandler(res => {
+                        this.pengeluaranList = JSON.parse(res || '[]');
+                        this.formPengeluaran.id = 'PA-00' + (this.pengeluaranList.length + 1);
+                    }).getDataFromSupabaseJson("pengeluaran");
+                    google.script.run.withSuccessHandler(res => this.transaksiList = JSON.parse(res || '[]')).getDataFromSupabaseJson("transaksi");
+                    google.script.run.withSuccessHandler(res => this.pembelianList = JSON.parse(res || '[]')).getDataFromSupabaseJson("pembelian");
+                    google.script.run.withSuccessHandler(res => this.pendapatanMekanikList = JSON.parse(res || '[]')).getDataFromSupabaseJson("pendapatan_mekanik");
+                },
+
+                loadPembelian() {
+                    google.script.run.withSuccessHandler(res => {
+                        this.pembelianList = JSON.parse(res || '[]');
+                    }).getDataFromSupabaseJson("pembelian");
+                },
+
+                editPembelian(item) {
+                    this.formRestock = {
+                        id: item.id,
+                        kode_barang: item.kode_barang,
+                        jumlah: item.jumlah,
+                        harga_beli: item.harga_beli,
+                        metode_pembayaran: item.metode_pembayaran,
+                        tanggal_jatuh_tempo: item.tanggal_jatuh_tempo || '',
+                        total_bayar: item.total_bayar
+                    };
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                },
+
+                bayarHutang(item) {
+                    if(confirm("Lunasi pembayaran hutang untuk transaksi ini?")) {
+                        google.script.run
+                            .withSuccessHandler(() => {
+                                alert('Pembayaran berhasil dilunasi!');
+                                this.loadData();
+                            })
+                            .withFailureHandler(err => alert('Gagal: ' + err.message))
+                            .lunasiPembelianServer(item.id);
+                    }
+                },
+
+                simpanBarang() {
+                    google.script.run.withSuccessHandler(() => {
+                        alert('Barang disimpan!');
+                        this.formBarang = { kode_barang: '', nama_barang: '', supplier: '', harga_beli: '', harga_jual: '', stok: '' };
+                        this.loadData();
+                    }).postDataToSupabaseServer("barang", this.formBarang);
+                },
+
+                simpanRestock() {
+                    if(!this.formRestock.kode_barang || !this.formRestock.jumlah) {
+                        alert('Mohon pilih barang dan isi jumlah!');
+                        return;
+                    }
+                    this.formRestock.total_bayar = this.formRestock.jumlah * this.formRestock.harga_beli;
+                    
+                    google.script.run
+                        .withSuccessHandler(() => {
+                            alert('Stok berhasil ditambah & data pembelian tersimpan!');
+                            this.formRestock = { kode_barang: '', jumlah: '', harga_beli: '', metode_pembayaran: 'Tunai', tanggal_jatuh_tempo: '', total_bayar: 0 };
+                            this.loadData();
+                        })
+                        .withFailureHandler(err => alert('Gagal: ' + err.message))
+                        .prosesTransaksiMasuk(this.formRestock);
+                },
+
+                tambahMekanik() {
+                    google.script.run.withSuccessHandler(() => {
+                        this.inputMekanikNama = '';
+                        this.loadData();
+                    }).postDataToSupabaseServer("mekanik", { nama: this.inputMekanikNama });
+                },
+
+                tambahJasa() {
+                    google.script.run.withSuccessHandler(() => {
+                        this.inputJasaNama = '';
+                        this.loadData();
+                    }).postDataToSupabaseServer("jasa", { nama_jasa: this.inputJasaNama });
+                },
+
+                tambahSupplier() {
+                    google.script.run.withSuccessHandler(() => {
+                        this.formSupplier = { nama: '', alamat: '', telp: '' };
+                        this.loadData();
+                    }).postDataToSupabaseServer("supplier", this.formSupplier);
+                },
+
+                simpanPengeluaran() {
+                    google.script.run.withSuccessHandler(() => {
+                        alert('Pengeluaran disimpan!');
+                        this.loadData();
+                    }).postDataToSupabaseServer("pengeluaran", this.formPengeluaran);
+                },
+
+                simpanPendapatanMekanik() {
+                    if(!this.formMekanikHarian.nama_mekanik || !this.formMekanikHarian.pendapatan) {
+                        alert('Mohon isi nama mekanik dan nominal pendapatan!');
+                        return;
+                    }
+                    this.formMekanikHarian.status = 'Belum Bayar';
+                    google.script.run.withSuccessHandler(() => {
+                        alert('Pendapatan mekanik berhasil disimpan!');
+                        this.formMekanikHarian = { nama_mekanik: '', tanggal: '', pendapatan: '', status: 'Belum Bayar' };
+                        this.loadData();
+                    }).postDataToSupabaseServer("pendapatan_mekanik", this.formMekanikHarian);
+                },
+
+                bayarMekanik(item) {
+                    if(confirm("Lakukan pembayaran pendapatan untuk mekanik " + item.nama_mekanik + "?")) {
+                        item.status = 'Lunas';
+                        google.script.run.withSuccessHandler(() => {
+                            alert('Pembayaran mekanik berhasil dilunasi dan tercatat di riwayat!');
+                            this.loadData();
+                        }).updateStatusPendapatanMekanikServer(item.id, 'Lunas');
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
