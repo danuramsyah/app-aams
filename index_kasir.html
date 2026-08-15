@@ -519,10 +519,10 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <template x-for="p in pengeluaranList" :key="p.id">
+                                    <template x-for="p in pengeluaranList" :key="p.id || p.id_pengeluaran">
                                         <tr class="border-b hover:bg-gray-50">
                                             <td class="p-2 font-mono font-bold text-blue-600" x-text="p.id || p.id_pengeluaran"></td>
-                                            <td class="p-2" x-text="p.created_at ? p.created_at.split('T')[0] : (p.tanggal || '-')"></td>
+                                            <td class="p-2" x-text="p.tanggal || (p.created_at ? p.created_at.split('T')[0] : '-')"></td>
                                             <td class="p-2" x-text="p.keterangan"></td>
                                             <td class="p-2 text-right font-bold text-red-600" x-text="'Rp ' + Number(p.nominal || 0).toLocaleString()"></td>
                                         </tr>
@@ -734,7 +734,7 @@
 
                         google.script.run.withSuccessHandler(res => { this.riwayatList = JSON.parse(res || '[]'); }).getDataFromSupabaseJson("riwayat_transaksi");
                     } else {
-                        // Direct fetch via Supabase SDK if running on GitHub Pages
+                        // Direct fetch via Supabase SDK di GitHub Pages
                         const { data: pData } = await _supabase.from('pengeluaran').select('*');
                         if (pData) {
                             this.pengeluaranList = pData;
@@ -921,21 +921,37 @@
                     }).prosesTransaksiPenjualanServer(payload);
                 },
 
-                // FUNGSI SIMPAN PENGELUARAN YANG SUDAH DIPERBAIKI
+                // FUNGSI SIMPAN PENGELUARAN FIX
                 async simpanPengeluaranKasir() {
                     if(!this.formPengeluaran.nominal) {
                         alert('Mohon isi nominal pengeluaran!');
                         return;
                     }
 
+                    let idVal = this.formPengeluaran.id_pengeluaran || ('PK-' + String((this.pengeluaranList.length || 0) + 1).padStart(3, '0'));
+                    let todayStr = new Date().toISOString().split('T')[0];
+
+                    // Mengisi 'id' DAN 'id_pengeluaran' sekaligus untuk mencegah error NOT NULL constraint
                     let payload = {
-                        id: this.formPengeluaran.id_pengeluaran || ('PK-' + String(this.pengeluaranList.length + 1).padStart(3, '0')),
+                        id: idVal,
+                        id_pengeluaran: idVal,
                         kategori: 'Operasional',
                         nominal: Number(this.formPengeluaran.nominal || 0),
-                        keterangan: this.formPengeluaran.keterangan || '-'
+                        keterangan: this.formPengeluaran.keterangan || '-',
+                        tanggal: todayStr
                     };
 
                     try {
+                        if (typeof google !== 'undefined' && google.script && google.script.run) {
+                            google.script.run.withSuccessHandler(() => {
+                                alert('Pengeluaran berhasil disimpan!');
+                                this.formPengeluaran.nominal = '';
+                                this.formPengeluaran.keterangan = '';
+                                this.loadMasterData();
+                            }).postDataToSupabaseServer("pengeluaran", payload);
+                            return;
+                        }
+
                         const { error } = await _supabase.from('pengeluaran').insert([payload]);
 
                         if (error) {
