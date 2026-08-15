@@ -651,61 +651,61 @@
                 },
 
                 tambahJasaKeServisDariAtas() {
-                    tambahJasaKeServisDariAtas() {
-    if(!this.tempJasaId) {
-        alert('Silakan pilih jasa terlebih dahulu!');
-        return;
-    }
-    let jasaObj = this.jasaList.find(j => j.id == this.tempJasaId);
-    if(jasaObj) {
-        let nama = jasaObj.nama_jasa || jasaObj.nama;
-        let harga = Number(this.formServisDetail.nominal_mekanik || 0);
-        let mekanikDipilih = this.formServisDetail.mekanik || '-';
-        
-        this.formServisDetail.keranjang.push({ 
-            kode_or_id: jasaObj.id, 
-            nama: nama, 
-            harga: harga, 
-            qty: 1, 
-            tipe: 'jasa',
-            mekanik: mekanikDipilih 
-        });
+                    if(!this.tempJasaId) {
+                        alert('Silakan pilih jasa terlebih dahulu!');
+                        return;
+                    }
+                    let jasaObj = this.jasaList.find(j => j.id == this.tempJasaId);
+                    if(jasaObj) {
+                        let nama = jasaObj.nama_jasa || jasaObj.nama;
+                        let harga = Number(this.formServisDetail.nominal_mekanik || 0);
+                        let mekanikDipilih = this.formServisDetail.mekanik || '-';
+                        
+                        this.formServisDetail.keranjang.push({ 
+                            kode_or_id: jasaObj.id, 
+                            nama: nama, 
+                            harga: harga, 
+                            qty: 1, 
+                            tipe: 'jasa',
+                            mekanik: mekanikDipilih 
+                        });
 
-        // Reset input setelah berhasil ditambahkan ke tabel
-        this.tempJasaId = '';
-        this.formServisDetail.nominal_mekanik = 0;
-    }
-},
+                        // Reset input setelah berhasil ditambahkan ke tabel
+                        this.tempJasaId = '';
+                        this.formServisDetail.nominal_mekanik = 0;
+                    }
+                },
+
                 bukaModalServis(item) {
-                    bukaModalServis(item) {
-    this.activeAntrian = item;
-    
-    let cleanKeranjang = [];
-    let parsedKeranjang = item.keranjang;
-    if(typeof parsedKeranjang === 'string') {
-        try { parsedKeranjang = JSON.parse(parsedKeranjang); } catch(e) { parsedKeranjang = []; }
-    }
+                    this.activeAntrian = item;
+                    
+                    let cleanKeranjang = [];
+                    let parsedKeranjang = item.keranjang;
+                    if(typeof parsedKeranjang === 'string') {
+                        try { parsedKeranjang = JSON.parse(parsedKeranjang); } catch(e) { parsedKeranjang = []; }
+                    }
 
-    if(parsedKeranjang && Array.isArray(parsedKeranjang)) {
-        cleanKeranjang = parsedKeranjang
-            .filter(k => (k.nama || k.nama_barang))
-            .map(k => ({
-                kode_or_id: k.kode_or_id || '',
-                nama: k.nama || k.nama_barang,
-                harga: Number(k.harga || k.subtotal || 0),
-                qty: Number(k.qty || 1),
-                tipe: k.tipe || 'jasa',
-                mekanik: k.mekanik || '-'
-            }));
-    }
+                    if(parsedKeranjang && Array.isArray(parsedKeranjang)) {
+                        cleanKeranjang = parsedKeranjang
+                            .filter(k => (k.nama || k.nama_barang))
+                            .map(k => ({
+                                kode_or_id: k.kode_or_id || '',
+                                nama: k.nama || k.nama_barang,
+                                harga: Number(k.harga || k.subtotal || 0),
+                                qty: Number(k.qty || 1),
+                                tipe: k.tipe || 'jasa',
+                                mekanik: k.mekanik || '-'
+                            }));
+                    }
 
-    this.formServisDetail = {
-        mekanik: item.mekanik || '',
-        nominal_mekanik: 0, // Diset 0 agar tidak menambah beban total secara ganda
-        keranjang: cleanKeranjang
-    };
-    this.modalInputServis = true;
-}
+                    this.formServisDetail = {
+                        mekanik: item.mekanik || '',
+                        nominal_mekanik: 0,
+                        keranjang: cleanKeranjang
+                    };
+                    this.modalInputServis = true;
+                },
+
                 initApp() {
                     const today = new Date();
                     this.currentDate = today.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
@@ -812,9 +812,9 @@
                 },
 
                 get hitungTotalServisDetail() {
-                    get hitungTotalServisDetail() {
-    return this.formServisDetail.keranjang.reduce((sum, i) => sum + (Number(i.harga || 0) * Number(i.qty || 1)), 0);
-},
+                    if (!this.formServisDetail || !Array.isArray(this.formServisDetail.keranjang)) return 0;
+                    return this.formServisDetail.keranjang.reduce((sum, i) => sum + (Number(i.harga || 0) * Number(i.qty || 1)), 0);
+                },
 
                 async simpanProsesServis() {
                     let updateData = {
