@@ -929,97 +929,55 @@
                     return this.formTL.keranjang.reduce((sum, i) => sum + (Number(i.harga || 0) * Number(i.qty || 1)), 0);
                 },
 
-                async simpanTransaksiLangsung() {
-                    if(this.formTL.keranjang.length === 0) {
-                        alert('Keranjang belanja masih kosong!');
-                        return;
-                    }
-                    let metode = this.tlMetodeBayar || 'tunai';
-                    let total = this.totalTagihanTL;
-                    let bayarFinal = metode === 'transfer' ? total : Number(this.formTL.bayar || 0);
-
-                    let statusBayar = 'selesai ' + metode;
-                    if (metode === 'tunai' && bayarFinal < total) {
-                        statusBayar = 'hutang';
-                    }
-
-                    let kembalianFinal = metode === 'transfer' ? 0 : (bayarFinal - total > 0 ? bayarFinal - total : 0);
-
-                    let payload = {
-                        no_transaksi: this.formTL.no_transaksi,
-                        nama_pelanggan: this.formTL.nama_pelanggan,
-                        plat_nomor: this.formTL.plat_nomor,
-                        total_tagihan: total,
-                        bayar: bayarFinal,
-                        kembalian: kembalianFinal,
-                        status: statusBayar,
-                        metode_pembayaran: metode,
-                        items: JSON.stringify(this.formTL.keranjang),
-                        created_at: new Date().toISOString()
-                    };
-
-                    const { error } = await _supabase.from('transaksi_langsung').insert([payload]);
-
-                    if (error) {
-                        alert('Gagal menyimpan transaksi langsung: ' + error.message);
-                    } else {
-                        let msg = statusBayar.includes('hutang') ? 'Transaksi langsung disimpan sebagai HUTANG!' : ('Transaksi langsung berhasil disimpan (' + metode.toUpperCase() + ')!');
-                        alert(msg);
-                        this.formTL = { no_transaksi: 'TL-' + Math.floor(100 + Math.random() * 900), nama_pelanggan: '', plat_nomor: '', keranjang: [], bayar: 0 };
-                        this.tlMekanik = '';
-                        this.loadMasterData();
-                    }
-                },
-
                 async simpanPengeluaranKasir() {
-    // 1. Validasi nominal pengeluaran
-    if (!this.formPengeluaran.nominal || Number(this.formPengeluaran.nominal) <= 0) {
+    // 1. Validasi nominal
+    const nominal = Number(this.formPengeluaran.nominal);
+    if (!this.formPengeluaran.nominal || isNaN(nominal) || nominal <= 0) {
         alert('Mohon isi nominal pengeluaran dengan benar!');
         return;
     }
 
-    // 2. Proteksi double-submit saat proses penyimpanan
+    // 2. Cegah double-submit
     if (this.isSubmitting) return;
     this.isSubmitting = true;
 
-    // 3. Tanggal lokal format YYYY-MM-DD
+    // 3. Format tanggal lokal (YYYY-MM-DD)
     const now = new Date();
-    const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const day = String(now.getDate()).padStart(2, '0');
-    const todayStr = `${year}-${month}-${day}`;
+    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
-    // 4. Pastikan ID selalu tergenerasi dan tidak pernah null/undefined
-    let idVal = this.formPengeluaran.id_pengeluaran 
-             || this.formPengeluaran.id 
-             || ('PK-' + String(((this.pengeluaranList && this.pengeluaranList.length) || 0) + 1).padStart(3, '0'));
+    // 4. Buat ID Pengeluaran (PK-00X)
+    const listLength = (Array.isArray(this.pengeluaranList) ? this.pengeluaranList.length : 0);
+    const idVal = this.formPengeluaran.id_pengeluaran 
+               || this.formPengeluaran.id 
+               || ('PK-' + String(listLength + 1).padStart(3, '0'));
 
-    let payload = {
+    // 5. Payload data untuk disimpan
+    const payload = {
         id_pengeluaran: idVal,
         kategori: 'Operasional',
-        nominal: Number(this.formPengeluaran.nominal || 0),
+        nominal: nominal,
         keterangan: this.formPengeluaran.keterangan || '-',
         tanggal: todayStr
     };
 
-    // Helper untuk reset input & update ke ID berikutnya
+    // Reset Form & Siapkan ID Berikutnya
     const resetForm = () => {
         this.formPengeluaran.nominal = '';
         this.formPengeluaran.keterangan = '';
-        let nextPk = ((this.pengeluaranList && this.pengeluaranList.length) || 0) + 1;
-        let nextId = 'PK-' + String(nextPk).padStart(3, '0');
+        const updatedLength = (Array.isArray(this.pengeluaranList) ? this.pengeluaranList.length : 0) + 1;
+        const nextId = 'PK-' + String(updatedLength).padStart(3, '0');
         this.formPengeluaran.id_pengeluaran = nextId;
         this.formPengeluaran.id = nextId;
     };
 
     try {
-        // Eksekusi jika berada di lingkungan Google Apps Script
+        // Jalur Google Apps Script
         if (typeof google !== 'undefined' && google.script && google.script.run) {
             google.script.run
                 .withSuccessHandler(async () => {
                     alert('Pengeluaran berhasil disimpan!');
                     resetForm();
-                    await this.loadMasterData();
+                    if (typeof this.loadMasterData === 'function') await this.loadMasterData();
                     this.isSubmitting = false;
                 })
                 .withFailureHandler((err) => {
@@ -1030,26 +988,19 @@
             return;
         }
 
-        // Direct Call via Supabase Client
+        // Jalur Direct Supabase (GitHub Pages / Web Client)
         let { error } = await _supabase.from('pengeluaran').insert([payload]);
 
-        // Fallback 1: Jika tabel Supabase menggunakan kolom bernama "id" (bukan "id_pengeluaran")
-        if (error && error.message.includes('id_pengeluaran') && error.message.includes('does not exist')) {
-            let altPayload = {
+        // Fallback jika skema tabel di Supabase menggunakan kolom "id" (bukan id_pengeluaran)
+        if (error && error.message.includes('id_pengeluaran')) {
+            const altPayload = {
                 id: idVal,
                 kategori: payload.kategori,
                 nominal: payload.nominal,
                 keterangan: payload.keterangan,
                 tanggal: payload.tanggal
             };
-            let retry = await _supabase.from('pengeluaran').insert([altPayload]);
-            error = retry.error;
-        }
-
-        // Fallback 2: Jika tabel Supabase mewajibkan kedua kolom ("id" dan "id_pengeluaran")
-        if (error && error.message.includes('violates not-null constraint')) {
-            let dualPayload = { ...payload, id: idVal };
-            let retry = await _supabase.from('pengeluaran').insert([dualPayload]);
+            const retry = await _supabase.from('pengeluaran').insert([altPayload]);
             error = retry.error;
         }
 
@@ -1058,7 +1009,7 @@
         } else {
             alert('Pengeluaran berhasil disimpan!');
             resetForm();
-            await this.loadMasterData();
+            if (typeof this.loadMasterData === 'function') await this.loadMasterData();
         }
     } catch (err) {
         alert("Terjadi kesalahan sistem: " + err.message);
@@ -1066,6 +1017,8 @@
         this.isSubmitting = false;
     }
 }
+}));
+});
 </script>
 </body>
 </html>
