@@ -492,7 +492,7 @@
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                             <div>
                                 <label class="block text-gray-600 mb-1">ID Pengeluaran</label>
-                                <input type="text" x-model="formPengeluaran.id_pengeluaran" readonly class="border p-2 rounded w-full bg-gray-100 font-bold font-mono">
+                                <input type="text" x-model="formPengeluaran.id" readonly class="border p-2 rounded w-full bg-gray-100 font-bold font-mono">
                             </div>
                             <div>
                                 <label class="block text-gray-600 mb-1">Nominal Pengeluaran (Rp)</label>
@@ -512,7 +512,7 @@
                             <table class="w-full text-left text-sm border-collapse">
                                 <thead>
                                     <tr class="bg-gray-100 border-b text-gray-600">
-                                        <th class="p-2">ID Pengeluaran</th>
+                                        <th class="p-2">id</th>
                                         <th class="p-2">Tanggal</th>
                                         <th class="p-2">Keterangan</th>
                                         <th class="p-2 text-right">Nominal</th>
@@ -639,7 +639,7 @@
                 tlBarangQty: 1,
                 tlMetodeBayar: 'tunai',
 
-                formPengeluaran: { id_pengeluaran: 'PK-001', nominal: '', keterangan: '' },
+                formPengeluaran: { id: 'PK-001', nominal: '', keterangan: '' },
                 
                 onJasaMekanikChange() {
                     if(!this.tempJasaId) return;
@@ -759,7 +759,7 @@
                         let { data: pData } = await _supabase.from('pengeluaran').select('*');
                         this.pengeluaranList = pData || [];
                         let nextPk = this.pengeluaranList.length + 1;
-                        this.formPengeluaran.id_pengeluaran = 'PK-' + String(nextPk).padStart(3, '0');
+                        this.formPengeluaran.id = 'PK-' + String(nextPk).padStart(3, '0');
 
                         // 7. Riwayat Transaksi
                         let { data: rData } = await _supabase.from('riwayat_transaksi').select('*');
