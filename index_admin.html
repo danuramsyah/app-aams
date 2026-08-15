@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aplikasi Bengkel Pintar - Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body class="bg-gray-100 font-sans" x-data="bengkelApp()" x-init="initApp()">
@@ -231,7 +232,6 @@
                 <div x-show="userRole === 'admin' && adminTab === 'pengeluaran'" class="space-y-6">
                     <h2 class="text-xl font-bold text-gray-800">Manajemen Pengeluaran & Pendapatan Mekanik</h2>
                     
-                    <!-- Form Input Pengeluaran -->
                     <div class="bg-white p-5 rounded-lg shadow space-y-4">
                         <h3 class="font-semibold text-gray-700 border-b pb-2">Form Input Pengeluaran</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
@@ -247,7 +247,6 @@
                         <button @click="simpanPengeluaran()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-blue-700 transition">Simpan Pengeluaran</button>
                     </div>
 
-                    <!-- FORM & TABEL PENDAPATAN MEKANIK PER HARI -->
                     <div class="bg-white p-5 rounded-lg shadow space-y-4">
                         <h3 class="font-semibold text-gray-700 border-b pb-2">Input & Daftar Pendapatan Mekanik per Hari</h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
@@ -271,7 +270,6 @@
                         </div>
                         <button @click="simpanPendapatanMekanik()" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-green-700 transition">Simpan Pendapatan Mekanik</button>
 
-                        <!-- Tabel Daftar Pendapatan Mekanik -->
                         <div class="overflow-x-auto pt-4">
                             <table class="w-full text-left text-sm border-collapse">
                                 <thead>
@@ -335,23 +333,6 @@
                                         </td>
                                     </tr>
                                 </template>
-                                <template x-if="pembelianList.filter(item => item.metode_pembayaran === 'Tunai').length === 0">
-                                    <tr>
-                                        <td colspan="6" class="p-4 text-center text-gray-400">Belum ada riwayat transaksi lunas.</td>
-                                    </tr>
-                                </template>
-                                <template x-for="t in pendapatanMekanikList.filter(item => item.status === 'Lunas')" :key="'mekanik-' + t.id">
-                                    <tr class="border-b hover:bg-gray-50">
-                                        <td class="p-2" x-text="t.tanggal || '-'"></td>
-                                        <td class="p-2 font-mono font-bold" x-text="'Gaji/Jasa - ' + t.nama_mekanik"></td>
-                                        <td class="p-2">Mekanik</td>
-                                        <td class="p-2">-</td>
-                                        <td class="p-2 font-bold text-blue-600" x-text="'Rp ' + Number(t.pendapatan || 0).toLocaleString()"></td>
-                                        <td class="p-2">
-                                            <span class="px-2 py-1 rounded text-xs font-bold bg-green-100 text-green-600">Lunas (Mekanik)</span>
-                                        </td>
-                                    </tr>
-                                </template>
                             </tbody>
                         </table>
                     </div>
@@ -363,19 +344,19 @@
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div class="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
                             <p class="text-xs text-gray-500">Pemasukan Kotor</p>
-                            <p class="text-lg font-bold">Rp 12.500.000</p>
+                            <p class="text-lg font-bold">Rp 0</p>
                         </div>
                         <div class="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500">
                             <p class="text-xs text-gray-500">Modal Terjual (HPP)</p>
-                            <p class="text-lg font-bold">Rp 8.000.000</p>
+                            <p class="text-lg font-bold">Rp 0</p>
                         </div>
                         <div class="bg-white p-4 rounded-lg shadow border-l-4 border-red-500">
                             <p class="text-xs text-gray-500">Total Pengeluaran</p>
-                            <p class="text-lg font-bold">Rp 2.000.000</p>
+                            <p class="text-lg font-bold">Rp 0</p>
                         </div>
                         <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
                             <p class="text-xs text-gray-500">Pemasukan Bersih</p>
-                            <p class="text-lg font-bold text-blue-600">Rp 2.500.000</p>
+                            <p class="text-lg font-bold text-blue-600">Rp 0</p>
                         </div>
                     </div>
                 </div>
@@ -384,6 +365,11 @@
     </div>
 
     <script>
+        // MASUKKAN KUNCI SUPABASE ANDA DI SINI
+        const SUPABASE_URL = 'https://lppqzaiipeqomwvzsqvr.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwcHF6YWlpcGVxb213dnpzcXZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNjA5MzAsImV4cCI6MjEwMTkzNjkzMH0.rSKXoseYUe3mtON-_s_pC5YsfVWrxFz3tUkuVTyAOn0';
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
         function bengkelApp() {
             return {
                 userRole: 'admin',
@@ -392,38 +378,45 @@
                 pendapatanMekanikList: [],
                 formMekanikHarian: { nama_mekanik: '', tanggal: '', pendapatan: '', status: 'Belum Bayar' },
                 
-                // Data Form
                 formBarang: { kode_barang: 'BRG-001', nama_barang: '', supplier: '', harga_beli: '', harga_jual: '', stok: '' },
                 formRestock: { kode_barang: '', jumlah: '', harga_beli: '', metode_pembayaran: 'Tunai', tanggal_jatuh_tempo: '', total_bayar: 0 },
                 inputMekanikNama: '', inputJasaNama: '',
                 formSupplier: { nama: '', alamat: '', telp: '' },
                 formPengeluaran: { id: 'PA-001', kategori: 'operasional', nominal: '', keterangan: '' },
                 
-                initApp() { this.loadData(); },
+                async initApp() { await this.loadData(); },
                 
-                loadData() {
-                    google.script.run.withSuccessHandler(res => {
-                        this.barangList = JSON.parse(res || '[]');
+                async loadData() {
+                    try {
+                        const { data: barang } = await _supabase.from('barang').select('*');
+                        this.barangList = barang || [];
                         let nextNum = this.barangList.length + 1;
                         this.formBarang.kode_barang = 'BRG-' + String(nextNum).padStart(3, '0');
-                    }).getDataFromSupabaseJson("barang");
 
-                    google.script.run.withSuccessHandler(res => this.supplierList = JSON.parse(res || '[]')).getDataFromSupabaseJson("supplier");
-                    google.script.run.withSuccessHandler(res => this.mekanikList = JSON.parse(res || '[]')).getDataFromSupabaseJson("mekanik");
-                    google.script.run.withSuccessHandler(res => this.jasaList = JSON.parse(res || '[]')).getDataFromSupabaseJson("jasa");
-                    google.script.run.withSuccessHandler(res => {
-                        this.pengeluaranList = JSON.parse(res || '[]');
+                        const { data: supplier } = await _supabase.from('supplier').select('*');
+                        this.supplierList = supplier || [];
+
+                        const { data: mekanik } = await _supabase.from('mekanik').select('*');
+                        this.mekanikList = mekanik || [];
+
+                        const { data: jasa } = await _supabase.from('jasa').select('*');
+                        this.jasaList = jasa || [];
+
+                        const { data: pengeluaran } = await _supabase.from('pengeluaran').select('*');
+                        this.pengeluaranList = pengeluaran || [];
                         this.formPengeluaran.id = 'PA-00' + (this.pengeluaranList.length + 1);
-                    }).getDataFromSupabaseJson("pengeluaran");
-                    google.script.run.withSuccessHandler(res => this.transaksiList = JSON.parse(res || '[]')).getDataFromSupabaseJson("transaksi");
-                    google.script.run.withSuccessHandler(res => this.pembelianList = JSON.parse(res || '[]')).getDataFromSupabaseJson("pembelian");
-                    google.script.run.withSuccessHandler(res => this.pendapatanMekanikList = JSON.parse(res || '[]')).getDataFromSupabaseJson("pendapatan_mekanik");
-                },
 
-                loadPembelian() {
-                    google.script.run.withSuccessHandler(res => {
-                        this.pembelianList = JSON.parse(res || '[]');
-                    }).getDataFromSupabaseJson("pembelian");
+                        const { data: transaksi } = await _supabase.from('transaksi').select('*');
+                        this.transaksiList = transaksi || [];
+
+                        const { data: pembelian } = await _supabase.from('pembelian').select('*');
+                        this.pembelianList = pembelian || [];
+
+                        const { data: pendapatan } = await _supabase.from('pendapatan_mekanik').select('*');
+                        this.pendapatanMekanikList = pendapatan || [];
+                    } catch (err) {
+                        console.error("Gagal koneksi ke Supabase:", err);
+                    }
                 },
 
                 editPembelian(item) {
@@ -439,91 +432,102 @@
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                 },
 
-                bayarHutang(item) {
+                async bayarHutang(item) {
                     if(confirm("Lunasi pembayaran hutang untuk transaksi ini?")) {
-                        google.script.run
-                            .withSuccessHandler(() => {
-                                alert('Pembayaran berhasil dilunasi!');
-                                this.loadData();
-                            })
-                            .withFailureHandler(err => alert('Gagal: ' + err.message))
-                            .lunasiPembelianServer(item.id);
+                        const { error } = await _supabase.from('pembelian').update({ metode_pembayaran: 'Tunai' }).eq('id', item.id);
+                        if(error) alert('Gagal: ' + error.message);
+                        else {
+                            alert('Pembayaran berhasil dilunasi!');
+                            await this.loadData();
+                        }
                     }
                 },
 
-                simpanBarang() {
-                    google.script.run.withSuccessHandler(() => {
+                async simpanBarang() {
+                    const { error } = await _supabase.from('barang').insert([this.formBarang]);
+                    if(error) alert('Gagal: ' + error.message);
+                    else {
                         alert('Barang disimpan!');
                         this.formBarang = { kode_barang: '', nama_barang: '', supplier: '', harga_beli: '', harga_jual: '', stok: '' };
-                        this.loadData();
-                    }).postDataToSupabaseServer("barang", this.formBarang);
+                        await this.loadData();
+                    }
                 },
 
-                simpanRestock() {
+                async simpanRestock() {
                     if(!this.formRestock.kode_barang || !this.formRestock.jumlah) {
                         alert('Mohon pilih barang dan isi jumlah!');
                         return;
                     }
-                    this.formRestock.total_bayar = this.formRestock.jumlah * this.formRestock.harga_beli;
+                    this.formRestock.total_bayar = Number(this.formRestock.jumlah) * Number(this.formRestock.harga_beli);
                     
-                    google.script.run
-                        .withSuccessHandler(() => {
-                            alert('Stok berhasil ditambah & data pembelian tersimpan!');
-                            this.formRestock = { kode_barang: '', jumlah: '', harga_beli: '', metode_pembayaran: 'Tunai', tanggal_jatuh_tempo: '', total_bayar: 0 };
-                            this.loadData();
-                        })
-                        .withFailureHandler(err => alert('Gagal: ' + err.message))
-                        .prosesTransaksiMasuk(this.formRestock);
+                    const { error } = await _supabase.from('pembelian').insert([this.formRestock]);
+                    if(error) alert('Gagal: ' + error.message);
+                    else {
+                        alert('Stok berhasil ditambah & data pembelian tersimpan!');
+                        this.formRestock = { kode_barang: '', jumlah: '', harga_beli: '', metode_pembayaran: 'Tunai', tanggal_jatuh_tempo: '', total_bayar: 0 };
+                        await this.loadData();
+                    }
                 },
 
-                tambahMekanik() {
-                    google.script.run.withSuccessHandler(() => {
+                async tambahMekanik() {
+                    const { error } = await _supabase.from('mekanik').insert([{ nama: this.inputMekanikNama }]);
+                    if(error) alert('Gagal: ' + error.message);
+                    else {
                         this.inputMekanikNama = '';
-                        this.loadData();
-                    }).postDataToSupabaseServer("mekanik", { nama: this.inputMekanikNama });
+                        await this.loadData();
+                    }
                 },
 
-                tambahJasa() {
-                    google.script.run.withSuccessHandler(() => {
+                async tambahJasa() {
+                    const { error } = await _supabase.from('jasa').insert([{ nama_jasa: this.inputJasaNama }]);
+                    if(error) alert('Gagal: ' + error.message);
+                    else {
                         this.inputJasaNama = '';
-                        this.loadData();
-                    }).postDataToSupabaseServer("jasa", { nama_jasa: this.inputJasaNama });
+                        await this.loadData();
+                    }
                 },
 
-                tambahSupplier() {
-                    google.script.run.withSuccessHandler(() => {
+                async tambahSupplier() {
+                    const { error } = await _supabase.from('supplier').insert([this.formSupplier]);
+                    if(error) alert('Gagal: ' + error.message);
+                    else {
                         this.formSupplier = { nama: '', alamat: '', telp: '' };
-                        this.loadData();
-                    }).postDataToSupabaseServer("supplier", this.formSupplier);
+                        await this.loadData();
+                    }
                 },
 
-                simpanPengeluaran() {
-                    google.script.run.withSuccessHandler(() => {
+                async simpanPengeluaran() {
+                    const { error } = await _supabase.from('pengeluaran').insert([this.formPengeluaran]);
+                    if(error) alert('Gagal: ' + error.message);
+                    else {
                         alert('Pengeluaran disimpan!');
-                        this.loadData();
-                    }).postDataToSupabaseServer("pengeluaran", this.formPengeluaran);
+                        await this.loadData();
+                    }
                 },
 
-                simpanPendapatanMekanik() {
+                async simpanPendapatanMekanik() {
                     if(!this.formMekanikHarian.nama_mekanik || !this.formMekanikHarian.pendapatan) {
                         alert('Mohon isi nama mekanik dan nominal pendapatan!');
                         return;
                     }
                     this.formMekanikHarian.status = 'Belum Bayar';
-                    google.script.run.withSuccessHandler(() => {
+                    const { error } = await _supabase.from('pendapatan_mekanik').insert([this.formMekanikHarian]);
+                    if(error) alert('Gagal: ' + error.message);
+                    else {
                         alert('Pendapatan mekanik berhasil disimpan!');
                         this.formMekanikHarian = { nama_mekanik: '', tanggal: '', pendapatan: '', status: 'Belum Bayar' };
-                        this.loadData();
-                    }).postDataToSupabaseServer("pendapatan_mekanik", this.formMekanikHarian);
+                        await this.loadData();
+                    }
                 },
 
-                bayarMekanik(item) {
+                async bayarMekanik(item) {
                     if(confirm("Lakukan pembayaran pendapatan untuk mekanik " + item.nama_mekanik + "?")) {
-                        item.status = 'Lunas';
-                        google.script.run.withSuccessHandler(() => {
-                            alert('Pembayaran mekanik berhasil dilunasi dan tercatat di riwayat!');
-                            this.loadData();
-                        }).updateStatusPendapatanMekanikServer(item.id, 'Lunas');
+                        const { error } = await _supabase.from('pendapatan_mekanik').update({ status: 'Lunas' }).eq('id', item.id);
+                        if(error) alert('Gagal: ' + error.message);
+                        else {
+                            alert('Pembayaran mekanik berhasil dilunasi!');
+                            await this.loadData();
+                        }
                     }
                 }
             }
