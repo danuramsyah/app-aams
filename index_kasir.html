@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Aplikasi Bengkel Pintar - Dashboard Kasir</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- CDN Supabase JS Client -->
+    <!-- CDN Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
@@ -519,10 +519,10 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <template x-for="(p, idx) in pengeluaranList" :key="p.id_pengeluaran || p.id || idx">
+                                    <template x-for="p in pengeluaranList" :key="p.id">
                                         <tr class="border-b hover:bg-gray-50">
-                                            <td class="p-2 font-mono font-bold text-blue-600" x-text="p.id_pengeluaran || p.id || ('PK-' + String(idx + 1).padStart(3, '0'))"></td>
-                                            <td class="p-2" x-text="p.tanggal || (p.created_at ? p.created_at.split('T')[0] : '-')"></td>
+                                            <td class="p-2 font-mono font-bold text-blue-600" x-text="p.id_pengeluaran || p.id"></td>
+                                            <td class="p-2" x-text="p.tanggal || '-'"></td>
                                             <td class="p-2" x-text="p.keterangan"></td>
                                             <td class="p-2 text-right font-bold text-red-600" x-text="'Rp ' + Number(p.nominal || 0).toLocaleString()"></td>
                                         </tr>
@@ -592,7 +592,7 @@
 
     <!-- Script Alpine.js Logika Kasir -->
     <script>
-        // KUNCI SUPABASE
+        // KUNCI SUPABASE UTAMA
         const SUPABASE_URL = 'https://lppqzaiipeqomwvzsqvr.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwcHF6YWlpcGVxb213dnpzcXZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNjA5MzAsImV4cCI6MjEwMTkzNjkzMH0.rSKXoseYUe3mtON-_s_pC5YsfVWrxFz3tUkuVTyAOn0';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -709,53 +709,82 @@
                     this.loadMasterData();
                 },
 
+                // FITUR SUPABASE FULL MIGRASI
                 async loadMasterData() {
-                    if(typeof google !== 'undefined' && google.script && google.script.run) {
-                        google.script.run.withSuccessHandler(res => { this.barangList = JSON.parse(res || '[]'); }).getDataFromSupabaseJson("barang");
-                        google.script.run.withSuccessHandler(res => { this.jasaList = JSON.parse(res || '[]'); }).getDataFromSupabaseJson("jasa");
-                        google.script.run.withSuccessHandler(res => { this.mekanikList = JSON.parse(res || '[]'); }).getDataFromSupabaseJson("mekanik");
-                        google.script.run.withSuccessHandler(res => {
-                            let rawAntrian = JSON.parse(res || '[]');
-                            this.antrianList = rawAntrian.map(a => {
-                                let k = a.keranjang;
-                                if (typeof k === 'string') { try { k = JSON.parse(k); } catch(e) { k = []; } }
-                                return { ...a, keranjang: Array.isArray(k) ? k : [] };
-                            });
-                            let nextNo = this.antrianList.length + 1;
-                            this.formAntrian.no_antrian = 'A-' + String(nextNo).padStart(3, '0');
-                        }).getDataFromSupabaseJson("antrian");
+                    try {
+                        // 1. Barang
+                        let { data: bData } = await _supabase.from('barang').select('*');
+                        this.barangList = bData || [];
 
-                        google.script.run.withSuccessHandler(res => { this.transaksiLangsungList = JSON.parse(res || '[]'); }).getDataFromSupabaseJson("transaksi_langsung");
-                        google.script.run.withSuccessHandler(res => {
-                            this.pengeluaranList = JSON.parse(res || '[]');
-                            let nextPk = this.pengeluaranList.length + 1;
-                            this.formPengeluaran.id_pengeluaran = 'PK-' + String(nextPk).padStart(3, '0');
-                        }).getDataFromSupabaseJson("pengeluaran");
+                        // 2. Jasa
+                        let { data: jData } = await _supabase.from('jasa').select('*');
+                        this.jasaList = jData || [];
 
-                        google.script.run.withSuccessHandler(res => { this.riwayatList = JSON.parse(res || '[]'); }).getDataFromSupabaseJson("riwayat_transaksi");
-                    } else {
-                        // Direct fetch via Supabase SDK di GitHub Pages
-                        const { data: pData } = await _supabase.from('pengeluaran').select('*');
-                        if (pData) {
-                            this.pengeluaranList = pData;
-                            let nextPk = this.pengeluaranList.length + 1;
-                            this.formPengeluaran.id_pengeluaran = 'PK-' + String(nextPk).padStart(3, '0');
+                        // 3. Mekanik
+                        let { data: mData } = await _supabase.from('mekanik').select('*');
+                        this.mekanikList = mData || [];
+
+                        // 4. Antrian
+                        let { data: aData } = await _supabase.from('antrian').select('*');
+                        let rawAntrian = aData || [];
+                        this.antrianList = rawAntrian.map(a => {
+                            let k = a.keranjang;
+                            if (typeof k === 'string') {
+                                try { k = JSON.parse(k); } catch(e) { k = []; }
+                            }
+                            return { ...a, keranjang: Array.isArray(k) ? k : [] };
+                        });
+
+                        let nextNo = 1;
+                        if (this.antrianList.length > 0) {
+                            let lastItem = this.antrianList[this.antrianList.length - 1];
+                            if (lastItem && lastItem.no_antrian) {
+                                let num = parseInt(lastItem.no_antrian.replace('A-', ''));
+                                if (!isNaN(num)) {
+                                    nextNo = num + 1;
+                                } else {
+                                    nextNo = this.antrianList.length + 1;
+                                }
+                            } else {
+                                nextNo = this.antrianList.length + 1;
+                            }
                         }
-                    }
+                        this.formAntrian.no_antrian = 'A-' + String(nextNo).padStart(3, '0');
 
-                    this.formTL.no_transaksi = 'TL-' + Math.floor(100 + Math.random() * 900);
+                        // 5. Transaksi Langsung
+                        let { data: tlData } = await _supabase.from('transaksi_langsung').select('*');
+                        this.transaksiLangsungList = tlData || [];
+
+                        // 6. Pengeluaran
+                        let { data: pData } = await _supabase.from('pengeluaran').select('*');
+                        this.pengeluaranList = pData || [];
+                        let nextPk = this.pengeluaranList.length + 1;
+                        this.formPengeluaran.id_pengeluaran = 'PK-' + String(nextPk).padStart(3, '0');
+
+                        // 7. Riwayat Transaksi
+                        let { data: rData } = await _supabase.from('riwayat_transaksi').select('*');
+                        this.riwayatList = rData || [];
+
+                        this.formTL.no_transaksi = 'TL-' + Math.floor(100 + Math.random() * 900);
+                    } catch (err) {
+                        console.error("Gagal mengambil data dari Supabase:", err);
+                    }
                 },
 
-                simpanAntrian() {
+                async simpanAntrian() {
                     if (!this.formAntrian.plat_nomor) {
                         alert('Mohon isi plat nomor motor!');
                         return;
                     }
-                    google.script.run.withSuccessHandler(() => {
+
+                    const { error } = await _supabase.from('antrian').insert([this.formAntrian]);
+                    if (error) {
+                        alert('Gagal menyimpan antrian: ' + error.message);
+                    } else {
                         alert('Antrian berhasil disimpan!');
                         this.formAntrian = { no_antrian: 'A-001', plat_nomor: '', jenis_motor: '', keluhan: '', status: 'antri' };
                         this.loadMasterData();
-                    }).postDataToSupabaseServer("antrian", this.formAntrian);
+                    }
                 },
 
                 tambahBarangKeServis() {
@@ -785,18 +814,27 @@
                     return totalItem + nominalMekanik;
                 },
 
-                simpanProsesServis() {
-                    this.activeAntrian.status = 'proses';
-                    this.activeAntrian.mekanik = this.formServisDetail.mekanik;
-                    this.activeAntrian.nominal_mekanik = this.formServisDetail.nominal_mekanik;
-                    this.activeAntrian.keranjang = JSON.stringify(this.formServisDetail.keranjang);
-                    this.activeAntrian.total_tagihan = this.hitungTotalServisDetail;
+                async simpanProsesServis() {
+                    let updateData = {
+                        status: 'proses',
+                        mekanik: this.formServisDetail.mekanik,
+                        nominal_mekanik: this.formServisDetail.nominal_mekanik,
+                        keranjang: JSON.stringify(this.formServisDetail.keranjang),
+                        total_tagihan: this.hitungTotalServisDetail
+                    };
 
-                    google.script.run.withSuccessHandler(() => {
+                    const { error } = await _supabase
+                        .from('antrian')
+                        .update(updateData)
+                        .eq('no_antrian', this.activeAntrian.no_antrian);
+
+                    if (error) {
+                        alert('Gagal memperbarui servis: ' + error.message);
+                    } else {
                         alert('Antrian diperbarui & status menjadi PROSES!');
                         this.modalInputServis = false;
                         this.loadMasterData();
-                    }).updateAntrianServer(this.activeAntrian);
+                    }
                 },
 
                 bukaFormBayarAntrian(item) {
@@ -806,7 +844,7 @@
                     this.modalBayarAntrian = true;
                 },
 
-                prosesBayarAntrianFinal(metode) {
+                async prosesBayarAntrianFinal(metode) {
                     let totalTagihan = Number(this.activeAntrian.total_tagihan || 0);
                     let bayarFinal = metode === 'transfer' ? totalTagihan : Number(this.nominalBayarAntrian || 0);
                     
@@ -818,19 +856,25 @@
                     let kembalianFinal = metode === 'transfer' ? 0 : (bayarFinal - totalTagihan > 0 ? bayarFinal - totalTagihan : 0);
 
                     let payload = {
-                        ...this.activeAntrian,
                         status: statusBayar,
                         metode_pembayaran: metode,
                         bayar: bayarFinal,
                         kembalian: kembalianFinal
                     };
 
-                    google.script.run.withSuccessHandler(() => {
+                    const { error } = await _supabase
+                        .from('antrian')
+                        .update(payload)
+                        .eq('no_antrian', this.activeAntrian.no_antrian);
+
+                    if (error) {
+                        alert('Gagal memproses pembayaran: ' + error.message);
+                    } else {
                         let msg = statusBayar.includes('hutang') ? 'Pembayaran disimpan sebagai HUTANG!' : ('Pembayaran ' + metode.toUpperCase() + ' berhasil!');
                         alert(msg);
                         this.modalBayarAntrian = false;
                         this.loadMasterData();
-                    }).selesaikanAntrianServer(payload);
+                    }
                 },
 
                 onJasaTLChange() {
@@ -885,7 +929,7 @@
                     return this.formTL.keranjang.reduce((sum, i) => sum + (Number(i.harga || 0) * Number(i.qty || 1)), 0);
                 },
 
-                simpanTransaksiLangsung() {
+                async simpanTransaksiLangsung() {
                     if(this.formTL.keranjang.length === 0) {
                         alert('Keranjang belanja masih kosong!');
                         return;
@@ -902,7 +946,9 @@
                     let kembalianFinal = metode === 'transfer' ? 0 : (bayarFinal - total > 0 ? bayarFinal - total : 0);
 
                     let payload = {
-                        ...this.formTL,
+                        no_transaksi: this.formTL.no_transaksi,
+                        nama_pelanggan: this.formTL.nama_pelanggan,
+                        plat_nomor: this.formTL.plat_nomor,
                         total_tagihan: total,
                         bayar: bayarFinal,
                         kembalian: kembalianFinal,
@@ -912,70 +958,42 @@
                         created_at: new Date().toISOString()
                     };
 
-                    google.script.run.withSuccessHandler(() => {
+                    const { error } = await _supabase.from('transaksi_langsung').insert([payload]);
+
+                    if (error) {
+                        alert('Gagal menyimpan transaksi langsung: ' + error.message);
+                    } else {
                         let msg = statusBayar.includes('hutang') ? 'Transaksi langsung disimpan sebagai HUTANG!' : ('Transaksi langsung berhasil disimpan (' + metode.toUpperCase() + ')!');
                         alert(msg);
                         this.formTL = { no_transaksi: 'TL-' + Math.floor(100 + Math.random() * 900), nama_pelanggan: '', plat_nomor: '', keranjang: [], bayar: 0 };
                         this.tlMekanik = '';
                         this.loadMasterData();
-                    }).prosesTransaksiPenjualanServer(payload);
+                    }
                 },
 
-                // FUNGSI SIMPAN PENGELUARAN AMAN (SUPPORT GAS & SUPABASE SDK)
                 async simpanPengeluaranKasir() {
-                    if (!this.formPengeluaran.nominal) {
+                    if(!this.formPengeluaran.nominal) {
                         alert('Mohon isi nominal pengeluaran!');
                         return;
                     }
 
-                    let idVal = this.formPengeluaran.id_pengeluaran || ('PK-' + String((this.pengeluaranList.length || 0) + 1).padStart(3, '0'));
-                    let todayStr = new Date().toISOString().split('T')[0];
-
                     let payload = {
-                        id_pengeluaran: idVal,
-                        kategori: 'Operasional',
+                        kategori: this.formPengeluaran.kategori || 'Operasional',
                         nominal: Number(this.formPengeluaran.nominal || 0),
-                        keterangan: this.formPengeluaran.keterangan || '-',
-                        tanggal: todayStr
+                        keterangan: this.formPengeluaran.keterangan || '-'
                     };
 
-                    try {
-                        // 1. Jika running di Google Apps Script
-                        if (typeof google !== 'undefined' && google.script && google.script.run) {
-                            google.script.run.withSuccessHandler(() => {
-                                alert('Pengeluaran berhasil disimpan!');
-                                this.formPengeluaran.nominal = '';
-                                this.formPengeluaran.keterangan = '';
-                                this.loadMasterData();
-                            }).postDataToSupabaseServer("pengeluaran", payload);
-                            return;
-                        }
+                    const { error } = await _supabase.from('pengeluaran').insert([payload]);
 
-                        // 2. Jika running langsung via Supabase SDK (GitHub Pages)
-                        let { error } = await _supabase.from('pengeluaran').insert([payload]);
-
-                        // Fallback jika database Supabase masih membutuhkan kolom 'id'
-                        if (error && error.message.includes('column "id"')) {
-                            payload.id = payload.id_pengeluaran;
-                            let retry = await _supabase.from('pengeluaran').insert([payload]);
-                            error = retry.error;
-                        }
-
-                        if (error) {
-                            alert("Gagal menyimpan ke Supabase: " + error.message);
-                            console.error("Detail Error:", error);
-                        } else {
-                            alert('Pengeluaran berhasil disimpan!');
-                            this.formPengeluaran.nominal = '';
-                            this.formPengeluaran.keterangan = '';
-                            await this.loadMasterData();
-                        }
-
-                    } catch (err) {
-                        alert("Terjadi kesalahan sistem: " + err.message);
-                        console.error(err);
+                    if (error) {
+                        alert("Error: " + error.message);
+                    } else {
+                        alert('Pengeluaran berhasil disimpan!');
+                        this.loadMasterData();
+                        this.formPengeluaran = { id_pengeluaran: '', kategori: '', nominal: '', keterangan: '' };
                     }
                 }
+
             };
         }
     </script>
