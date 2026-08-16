@@ -225,7 +225,7 @@
                                                 <td class="p-2 text-center" x-text="ci.qty"></td>
                                                 <td class="p-2 text-right" x-text="'Rp ' + Number(ci.harga * ci.qty).toLocaleString()"></td>
                                                 <td class="p-2 text-center">
-                                                    <button @click="formServisDetail.keranjang.splice(idx, 1)" class="text-red-500 font-bold hover:text-red-700">&times;</button>
+                                                    <button @click="hapusItemServis(idx)" class="text-red-500 font-bold hover:text-red-700">&times;</button>
                                                 </td>
                                             </tr>
                                         </template>
@@ -389,7 +389,7 @@
                                             <td class="p-2 text-center" x-text="item.qty"></td>
                                             <td class="p-2 text-right" x-text="'Rp ' + Number(item.harga * item.qty).toLocaleString()"></td>
                                             <td class="p-2 text-center">
-                                                <button @click="formTL.keranjang.splice(idx, 1)" class="text-red-500 font-bold hover:text-red-700">&times;</button>
+                                                <button @click="hapusItemTL(idx)" class="text-red-500 font-bold hover:text-red-700">&times;</button>
                                             </td>
                                         </tr>
                                     </template>
@@ -669,6 +669,13 @@
                 tlMetodeBayar: 'tunai',
 
                 formPengeluaran: { id_pengeluaran: 'PK-001', nominal: '', keterangan: '' },
+
+                // Helper untuk mendeteksi nama kolom Primary Key pada tabel barang
+                getKeyColumn(bObj) {
+                    if (bObj.barang !== undefined) return 'barang';
+                    if (bObj.kode_barang !== undefined) return 'kode_barang';
+                    return 'id';
+                },
                 
                 onJasaMekanikChange() {
                     if(!this.tempJasaId) return;
@@ -807,8 +814,8 @@
                     }
                 },
 
-                // Tambah Barang + Validasi Stok Sisa
-                tambahBarangKeServis() {
+                // Tambah Barang + Potong Stok Langsung di Supabase & Local
+                async tambahBarangKeServis() {
                     if(!this.tempBarangId) {
                         alert('Silakan pilih barang terlebih dahulu!');
                         return;
@@ -823,22 +830,36 @@
                             return;
                         }
 
-                        // Cek apakah barang sudah ada di keranjang untuk menghitung total akumulasi
-                        let existingItem = this.formServisDetail.keranjang.find(k => k.kode_or_id == (bObj.id || bObj.kode_barang || bObj.barang) && k.tipe === 'barang');
-                        let totalQtyCart = (existingItem ? Number(existingItem.qty) : 0) + qtyReq;
-
-                        if (totalQtyCart > stokTersedia) {
-                            alert(`Stok tidak mencukupi! Stok tersedia: ${stokTersedia}. (Sudah di keranjang: ${existingItem ? existingItem.qty : 0})`);
+                        if (qtyReq > stokTersedia) {
+                            alert(`Stok tidak mencukupi! Stok tersedia: ${stokTersedia}`);
                             return;
                         }
+
+                        let targetKey = bObj.id || bObj.kode_barang || bObj.barang;
+                        let keyCol = this.getKeyColumn(bObj);
+                        let sisaStok = stokTersedia - qtyReq;
+
+                        // Potong stok langsung di Supabase saat tombol Tambah diklik
+                        const { error } = await _supabase
+                            .from('barang')
+                            .update({ stok: sisaStok })
+                            .eq(keyCol, targetKey);
+
+                        if (error) {
+                            alert('Gagal memotong stok barang di database: ' + error.message);
+                            return;
+                        }
+
+                        // Update stok lokal di barangList
+                        bObj.stok = sisaStok;
 
                         let nama = bObj.nama_barang || bObj.nama;
                         let harga = Number(bObj.harga_jual || 0);
                         let mekanikDipilih = this.formServisDetail.mekanik || '-';
-                        let targetKey = bObj.id || bObj.kode_barang || bObj.barang;
                         
+                        let existingItem = this.formServisDetail.keranjang.find(k => k.kode_or_id == targetKey && k.tipe === 'barang');
                         if (existingItem) {
-                            existingItem.qty = totalQtyCart;
+                            existingItem.qty = Number(existingItem.qty) + qtyReq;
                         } else {
                             this.formServisDetail.keranjang.push({ 
                                 kode_or_id: targetKey, 
@@ -856,12 +877,29 @@
                     }
                 },
 
+                // Kembalikan stok jika item dihapus dari keranjang Servis
+                async hapusItemServis(idx) {
+                    let item = this.formServisDetail.keranjang[idx];
+                    if (item && item.tipe === 'barang') {
+                        let bObj = this.barangList.find(b => (b.id || b.kode_barang || b.barang) == item.kode_or_id);
+                        if (bObj) {
+                            let targetKey = bObj.id || bObj.kode_barang || bObj.barang;
+                            let keyCol = this.getKeyColumn(bObj);
+                            let stokBaru = Number(bObj.stok || 0) + Number(item.qty || 0);
+
+                            await _supabase.from('barang').update({ stok: stokBaru }).eq(keyCol, targetKey);
+                            bObj.stok = stokBaru;
+                        }
+                    }
+                    this.formServisDetail.keranjang.splice(idx, 1);
+                },
+
                 get hitungTotalServisDetail() {
                     if (!this.formServisDetail || !Array.isArray(this.formServisDetail.keranjang)) return 0;
                     return this.formServisDetail.keranjang.reduce((sum, i) => sum + (Number(i.harga || 0) * Number(i.qty || 1)), 0);
                 },
 
-                // Simpan & Kurangi Stok Barang Otomatis
+                // Simpan & Pastikan Pemotongan Stok Barang Otomatis
                 async simpanProsesServis() {
                     if (this.isSubmitting) return;
                     this.isSubmitting = true;
@@ -886,25 +924,21 @@
                             return;
                         }
 
-                        // PROSES PEMOTONGAN STOK BARANG DI SUPABASE
+                        // Sinkronisasi ulang pemotongan stok di Supabase untuk memastikan stok selalu akurat
                         for (let item of this.formServisDetail.keranjang) {
                             if (item.tipe === 'barang') {
                                 let bObj = this.barangList.find(b => (b.id || b.kode_barang || b.barang) == item.kode_or_id);
                                 if (bObj) {
-                                    let sisaStok = Math.max(0, Number(bObj.stok || 0) - Number(item.qty || 0));
-                                    
-                                    // Tentukan nama primary key ('barang', 'kode_barang', atau 'id')
-                                    let keyCol = bObj.barang !== undefined ? 'barang' : (bObj.kode_barang !== undefined ? 'kode_barang' : 'id');
-
+                                    let keyCol = this.getKeyColumn(bObj);
                                     await _supabase
                                         .from('barang')
-                                        .update({ stok: sisaStok })
+                                        .update({ stok: Number(bObj.stok) })
                                         .eq(keyCol, item.kode_or_id);
                                 }
                             }
                         }
 
-                        alert('Antrian diperbarui, stok barang berhasil berkurang, & status menjadi PROSES!');
+                        alert('Antrian diperbarui, stok barang berhasil dipotong, & status menjadi PROSES!');
                         this.modalInputServis = false;
                         await this.loadMasterData();
                     } catch (err) {
@@ -1018,7 +1052,8 @@
                     }
                 },
 
-                tambahBarangTL() {
+                // Tambah Barang Transaksi Langsung + Potong Stok Langsung
+                async tambahBarangTL() {
                     if(!this.tlBarangId) {
                         alert('Silakan pilih sparepart terlebih dahulu!');
                         return;
@@ -1033,8 +1068,25 @@
                             return;
                         }
 
+                        let targetKey = b.id || b.kode_barang || b.barang;
+                        let keyCol = this.getKeyColumn(b);
+                        let sisaStok = stokTersedia - qtyReq;
+
+                        // Potong stok langsung di Supabase
+                        const { error } = await _supabase
+                            .from('barang')
+                            .update({ stok: sisaStok })
+                            .eq(keyCol, targetKey);
+
+                        if (error) {
+                            alert('Gagal memotong stok: ' + error.message);
+                            return;
+                        }
+
+                        b.stok = sisaStok;
+
                         this.formTL.keranjang.push({
-                            kode_or_id: b.id || b.kode_barang || b.barang,
+                            kode_or_id: targetKey,
                             nama: b.nama_barang || b.nama,
                             harga: Number(b.harga_jual || 0),
                             qty: qtyReq,
@@ -1044,6 +1096,23 @@
                         this.tlBarangId = '';
                         this.tlBarangQty = 1;
                     }
+                },
+
+                // Kembalikan stok jika item dihapus dari keranjang Transaksi Langsung
+                async hapusItemTL(idx) {
+                    let item = this.formTL.keranjang[idx];
+                    if (item && item.tipe === 'barang') {
+                        let b = this.barangList.find(x => (x.id || x.kode_barang || x.barang) == item.kode_or_id);
+                        if (b) {
+                            let targetKey = b.id || b.kode_barang || b.barang;
+                            let keyCol = this.getKeyColumn(b);
+                            let stokBaru = Number(b.stok || 0) + Number(item.qty || 0);
+
+                            await _supabase.from('barang').update({ stok: stokBaru }).eq(keyCol, targetKey);
+                            b.stok = stokBaru;
+                        }
+                    }
+                    this.formTL.keranjang.splice(idx, 1);
                 },
 
                 get totalTagihanTL() {
@@ -1115,18 +1184,6 @@
                         if (error) {
                             alert('Gagal menyimpan transaksi langsung: ' + error.message);
                         } else {
-                            // Potong stok barang TL
-                            for (let item of this.formTL.keranjang) {
-                                if (item.tipe === 'barang') {
-                                    let bObj = this.barangList.find(b => (b.id || b.kode_barang || b.barang) == item.kode_or_id);
-                                    if (bObj) {
-                                        let sisaStok = Math.max(0, Number(bObj.stok || 0) - Number(item.qty || 0));
-                                        let keyCol = bObj.barang !== undefined ? 'barang' : (bObj.kode_barang !== undefined ? 'kode_barang' : 'id');
-                                        await _supabase.from('barang').update({ stok: sisaStok }).eq(keyCol, item.kode_or_id);
-                                    }
-                                }
-                            }
-
                             await _supabase.from('riwayat_transaksi').insert([{
                                 no_transaksi: payload.no_transaksi,
                                 plat_nomor: payload.plat_nomor,
