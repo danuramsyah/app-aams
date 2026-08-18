@@ -46,178 +46,601 @@
         <div class="flex flex-1 flex-col md:flex-row">
             <aside class="w-full md:w-64 bg-white shadow-md p-4 space-y-2">
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Menu Kasir</p>
-                <button @click="activeTab = 'pos'" :class="activeTab === 'pos' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">🛒 Kasir (POS)</button>
-                <button @click="activeTab = 'antrian'" :class="activeTab === 'antrian' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">📋 Antrian Servis</button>
-                <button @click="activeTab = 'riwayat'" :class="activeTab === 'riwayat' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">📜 Riwayat Transaksi</button>
-                <button @click="activeTab = 'pengeluaran'" :class="activeTab === 'pengeluaran' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">💸 Input Pengeluaran Kasir</button>
+                <button @click="kasirTab = 'antrian'" :class="kasirTab === 'antrian' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">Antrian Servis</button>
+                <button @click="kasirTab = 'transaksi_langsung'" :class="kasirTab === 'transaksi_langsung' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">Transaksi Langsung</button>
+                <button @click="kasirTab = 'pengeluaran'" :class="kasirTab === 'pengeluaran' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">Input Pengeluaran</button>
+                <button @click="kasirTab = 'riwayat'" :class="kasirTab === 'riwayat' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">Riwayat Transaksi</button>
             </aside>
 
             <main class="flex-1 p-6 overflow-y-auto">
-
-                <div x-show="activeTab === 'pos'" class="space-y-6">
-                    <h2 class="text-xl font-bold text-gray-800">Point of Sale (Kasir)</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="md:col-span-2 bg-white p-5 rounded-lg shadow space-y-4">
-                            <h3 class="font-semibold text-gray-700 border-b pb-2">Pilih Barang & Jasa</h3>
-                            <div class="flex gap-2">
-                                <input type="text" x-model="searchQuery" placeholder="Cari nama barang..." class="border p-2 rounded w-full text-sm">
+                
+                <div x-show="kasirTab === 'antrian'" class="space-y-6">
+                    <h2 class="text-xl font-bold text-gray-800">Manajemen Antrian Servis</h2>
+                    
+                    <div class="bg-white p-5 rounded-lg shadow space-y-4">
+                        <h3 class="font-semibold text-gray-700 border-b pb-2">Form 1: Input Antrian Servis Baru</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                            <div>
+                                <label class="block text-gray-600 mb-1">No. Antrian</label>
+                                <input type="text" x-model="formAntrian.no_antrian" readonly class="border p-2 rounded w-full bg-gray-100 font-bold font-mono">
                             </div>
-                            <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-96 overflow-y-auto">
-                                <template x-for="b in filteredBarang" :key="b.id">
-                                    <div @click="tambahKeKeranjang(b)" class="border p-3 rounded cursor-pointer hover:bg-blue-50 transition flex flex-col justify-between">
-                                        <div>
-                                            <p class="font-bold text-sm text-gray-800" x-text="b.nama_barang || b.nama"></p>
-                                            <p class="text-xs text-gray-500 font-mono" x-text="b.kode_barang"></p>
-                                        </div>
-                                        <div class="mt-2">
-                                            <p class="text-xs text-blue-600 font-bold" x-text="'Rp ' + Number(b.harga_jual || 0).toLocaleString()"></p>
-                                            <p class="text-[10px] text-gray-400" x-text="'Stok: ' + b.stok"></p>
+                            <div>
+                                <label class="block text-gray-600 mb-1">Plat Motor</label>
+                                <input type="text" x-model="formAntrian.plat_nomor" placeholder="Contoh: B 1234 XYZ" class="border p-2 rounded w-full uppercase font-mono">
+                                <span class="text-xs text-gray-400">Format: 2 Huruf | 4 Angka | 3 Huruf</span>
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 mb-1">Jenis Motor</label>
+                                <input type="text" x-model="formAntrian.jenis_motor" placeholder="Contoh: Honda Beat" class="border p-2 rounded w-full">
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 mb-1">Keluhan</label>
+                                <input type="text" x-model="formAntrian.keluhan" placeholder="Contoh: Ganti oli & rem blong" class="border p-2 rounded w-full">
+                            </div>
+                        </div>
+                        <button @click="simpanAntrian()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-blue-700 transition">Simpan Antrian</button>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-lg shadow-sm border space-y-3">
+                        <h3 class="font-bold text-gray-700">Form 2: Daftar Antrian Servis</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead class="bg-gray-100 border-b">
+                                    <tr>
+                                        <th class="p-2">No. Antrian</th>
+                                        <th class="p-2">Plat Motor / Jenis</th>
+                                        <th class="p-2">Detail Item (Jasa / Barang & Mekanik)</th>
+                                        <th class="p-2 text-center">Status</th>
+                                        <th class="p-2 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="item in antrianList" :key="item.no_antrian">
+                                        <tr class="border-b hover:bg-gray-50">
+                                            <td class="p-2 font-bold align-middle">
+                                                <a href="#" @click.prevent="bukaModalServis(item)" class="text-blue-600 hover:underline" x-text="item.no_antrian"></a>
+                                                <div class="text-gray-400 font-normal text-[10px]" x-text="item.keluhan"></div>
+                                            </td>
+                                            <td class="p-2 align-middle">
+                                                <div class="font-bold" x-text="item.plat_nomor"></div>
+                                                <div class="text-gray-500 text-[11px]" x-text="item.jenis_motor"></div>
+                                            </td>
+                                            <td class="p-2">
+                                                <template x-if="item.keranjang && item.keranjang.length > 0">
+                                                    <div class="space-y-1 py-1">
+                                                        <template x-for="k in item.keranjang">
+                                                            <template x-if="k.nama || k.nama_barang">
+                                                                <div class="bg-gray-50 p-1 rounded border flex justify-between items-center text-[11px]">
+                                                                    <div>
+                                                                        <span class="font-bold uppercase" x-text="k.nama || k.nama_barang"></span> 
+                                                                        <span class="text-gray-500" x-text="'(' + (k.qty || 1) + 'x Rp ' + Number(k.harga || k.subtotal || 0).toLocaleString() + ')'"></span>
+                                                                        <template x-if="k.mekanik">
+                                                                            <span class="ml-1 text-blue-600 font-semibold" x-text="'[' + k.mekanik + ']'"></span>
+                                                                        </template>
+                                                                    </div>
+                                                                    <div class="font-bold text-gray-700" x-text="'Rp ' + Number((k.harga || k.subtotal || 0) * (k.qty || 1)).toLocaleString()"></div>
+                                                                </div>
+                                                            </template>
+                                                        </template>
+                                                        <div class="text-right font-bold text-blue-600 pt-1 border-t mt-1">
+                                                            Total: Rp <span x-text="Number(item.keranjang.reduce((sum, i) => sum + ((Number(i.harga || i.subtotal || 0)) * (Number(i.qty || 1))), 0)).toLocaleString()"></span>
+                                                        </div>
+                                                    </div>
+                                                </template>
+                                                <template x-if="!item.keranjang || item.keranjang.length === 0">
+                                                    <span class="text-gray-400 italic">Belum ada item / jasa</span>
+                                                </template>
+                                            </td>
+                                            <td class="p-2 text-center align-middle">
+                                                <span class="px-2 py-1 rounded text-[10px] font-bold" 
+                                                      :class="item.status && item.status.includes('selesai') ? 'bg-green-100 text-green-700' : (item.status && item.status.includes('hutang') ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700')" 
+                                                      x-text="item.status ? item.status.toUpperCase() : 'ANTRI'"></span>
+                                            </td>
+                                            <td class="p-2 text-center align-middle space-y-1">
+                                                <template x-if="!item.status || !item.status.includes('selesai')">
+                                                    <button @click="bukaModalServis(item)" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-[11px] font-bold whitespace-nowrap block w-full mb-1">+ Input / Edit</button>
+                                                </template>
+                                                <template x-if="!item.status || !item.status.includes('selesai')">
+                                                    <button @click="bukaFormBayarAntrian(item)" class="bg-green-600 hover:bg-green-700 text-white px-2 py-1 rounded text-[11px] font-bold whitespace-nowrap block w-full">Bayar</button>
+                                                </template>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <template x-if="antrianList.length === 0">
+                                        <tr><td colspan="5" class="p-4 text-center text-gray-400 italic">Belum ada antrian servis</td></tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div x-show="modalInputServis" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-3xl space-y-4 max-h-[90vh] overflow-y-auto">
+                            <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Form Input Servis: <span class="text-blue-600" x-text="activeAntrian?.no_antrian"></span></h3>
+                            
+                            <div class="p-3 bg-gray-50 rounded border space-y-3">
+                                <label class="block text-xs font-bold text-gray-700 uppercase">Pengaturan Mekanik & Jasa Servis</label>
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm items-end">
+                                    <div>
+                                        <label class="block text-xs text-gray-600 mb-1 font-semibold">Pilih Mekanik</label>
+                                        <select x-model="formServisDetail.mekanik" class="border p-2 rounded w-full">
+                                            <option value="">-- Pilih Mekanik --</option>
+                                            <template x-for="m in mekanikList" :key="m.id">
+                                                <option :value="m.nama || m.nama_mekanik" x-text="m.nama || m.nama_mekanik"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-600 mb-1 font-semibold">Pilih Jasa</label>
+                                        <select x-model="tempJasaId" @change="onJasaMekanikChange()" class="border p-2 rounded w-full">
+                                            <option value="">-- Pilih Jasa --</option>
+                                            <template x-for="j in jasaList" :key="j.id">
+                                                <option :value="j.id" x-text="j.nama_jasa || j.nama"></option>
+                                            </template>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs text-gray-600 mb-1 font-semibold">Nominal (Rp)</label>
+                                        <input type="number" x-model.number="formServisDetail.nominal_mekanik" placeholder="Nominal" class="border p-2 rounded w-full">
+                                    </div>
+                                    <div>
+                                        <button @click="tambahJasaKeServisDariAtas()" class="w-full bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm font-bold transition">+ Tambah</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="p-3 bg-gray-50 rounded border space-y-2">
+                                <label class="block text-xs font-bold text-gray-700 uppercase">Tambah Sparepart / Barang</label>
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm items-end">
+                                    <div class="relative md:col-span-2" @click.outside="showBarangDropdown = false">
+                                        <label class="block text-xs text-gray-600 mb-1 font-semibold">Pilih / Cari Barang</label>
+                                        <input type="text" 
+                                               x-model="searchBarangQuery" 
+                                               @focus="showBarangDropdown = true" 
+                                               @input="showBarangDropdown = true; tempBarangId = ''"
+                                               placeholder="🔍 Ketik nama / kode barang..." 
+                                               class="border p-2 rounded w-full text-xs bg-white cursor-pointer">
+                                        
+                                        <div x-show="showBarangDropdown" 
+                                             class="absolute z-50 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-48 overflow-y-auto shadow-lg text-xs" 
+                                             style="display: none;">
+                                            <template x-for="b in filteredBarangList" :key="b.id || b.kode_barang || b.kode || b.barang">
+                                                <div @click="selectBarang(b)" 
+                                                     class="p-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 flex justify-between items-center">
+                                                    <span class="font-semibold text-gray-800" x-text="b.nama_barang || b.nama"></span>
+                                                    <span class="text-xs bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded" x-text="'Stok: ' + b.stok"></span>
+                                                </div>
+                                            </template>
+                                            <template x-if="filteredBarangList.length === 0">
+                                                <div class="p-2 text-gray-400 italic text-center">Barang tidak ditemukan</div>
+                                            </template>
                                         </div>
                                     </div>
-                                </template>
+
+                                    <div>
+                                        <label class="block text-xs text-gray-600 mb-1 font-semibold">Jumlah (Qty)</label>
+                                        <input type="number" x-model.number="tempBarangQty" placeholder="Qty" min="1" class="border p-2 rounded w-full">
+                                    </div>
+                                    <div>
+                                        <button @click="tambahBarangKeServis()" class="w-full bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm font-bold transition">+ Tambah Sparepart</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="border rounded overflow-hidden">
+                                <table class="w-full text-left text-xs border-collapse">
+                                    <thead class="bg-gray-100 border-b">
+                                        <tr>
+                                            <th class="p-2">Item / Jasa</th>
+                                            <th class="p-2">Mekanik</th>
+                                            <th class="p-2 text-center">Tipe</th>
+                                            <th class="p-2 text-center">Qty</th>
+                                            <th class="p-2 text-right">Subtotal</th>
+                                            <th class="p-2 text-center">Aksi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <template x-for="(ci, idx) in formServisDetail.keranjang" :key="idx">
+                                            <tr class="border-b">
+                                                <td class="p-2 font-bold" x-text="ci.nama"></td>
+                                                <td class="p-2 text-blue-600 font-semibold" x-text="ci.mekanik || '-'"></td>
+                                                <td class="p-2 text-center uppercase text-gray-500" x-text="ci.tipe"></td>
+                                                <td class="p-2 text-center" x-text="ci.qty"></td>
+                                                <td class="p-2 text-right" x-text="'Rp ' + Number(ci.harga * ci.qty).toLocaleString()"></td>
+                                                <td class="p-2 text-center">
+                                                    <button @click="formServisDetail.keranjang.splice(idx, 1)" class="text-red-500 font-bold hover:text-red-700">&times;</button>
+                                                </td>
+                                            </tr>
+                                        </template>
+                                        <template x-if="formServisDetail.keranjang.length === 0">
+                                            <tr><td colspan="6" class="p-3 text-center text-gray-400 italic">Belum ada item ditambahkan</td></tr>
+                                        </template>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="flex justify-between items-center pt-2 border-t font-bold text-sm">
+                                <span>Total Tagihan:</span>
+                                <span class="text-blue-600 text-base" x-text="'Rp ' + Number(hitungTotalServisDetail).toLocaleString()"></span>
+                            </div>
+
+                            <div class="flex justify-end gap-2 pt-3 border-t">
+                                <button @click="modalInputServis = false" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded text-sm font-bold">Batal</button>
+                                <button @click="simpanProsesServis()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold">Simpan & Ubah ke Proses</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div x-show="modalBayarAntrian" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md space-y-4">
+                            <h3 class="text-lg font-bold text-gray-800 border-b pb-2">Pembayaran Antrian: <span class="text-blue-600" x-text="activeAntrian?.no_antrian"></span></h3>
+                            
+                            <div class="space-y-2 text-sm bg-gray-50 p-3 rounded border">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Plat Motor:</span>
+                                    <span class="font-bold uppercase" x-text="activeAntrian?.plat_nomor"></span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-600">Total Tagihan:</span>
+                                    <span class="font-bold text-blue-600 text-base" x-text="'Rp ' + Number(activeAntrian?.total_tagihan || 0).toLocaleString()"></span>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2 text-sm">
+                                <label class="block text-gray-600 font-semibold">Metode Pembayaran</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button @click="metodeBayarAntrian = 'tunai'" :class="metodeBayarAntrian === 'tunai' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'" class="py-2 rounded font-bold text-sm transition">Tunai</button>
+                                    <button @click="metodeBayarAntrian = 'transfer'" :class="metodeBayarAntrian === 'transfer' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'" class="py-2 rounded font-bold text-sm transition">Transfer</button>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2 text-sm" x-show="metodeBayarAntrian === 'tunai'">
+                                <label class="block text-gray-600">Nominal Bayar (Rp)</label>
+                                <input type="number" x-model.number="nominalBayarAntrian" placeholder="Masukkan jumlah uang bayar" class="border p-2 rounded w-full font-bold text-lg">
+                            </div>
+
+                            <div class="flex justify-between text-sm bg-blue-50 p-3 rounded" x-show="metodeBayarAntrian === 'tunai' && nominalBayarAntrian >= (activeAntrian?.total_tagihan || 0)">
+                                <span class="font-bold text-gray-700">Kembalian:</span>
+                                <span class="font-bold text-green-600 text-base" x-text="'Rp ' + Number(nominalBayarAntrian - (activeAntrian?.total_tagihan || 0)).toLocaleString()"></span>
+                            </div>
+
+                            <div class="flex justify-between text-sm bg-red-50 p-3 rounded" x-show="metodeBayarAntrian === 'tunai' && nominalBayarAntrian < (activeAntrian?.total_tagihan || 0)">
+                                <span class="font-bold text-red-700">Kurang (Hutang):</span>
+                                <span class="font-bold text-red-600 text-base" x-text="'Rp ' + Number((activeAntrian?.total_tagihan || 0) - nominalBayarAntrian).toLocaleString()"></span>
+                            </div>
+
+                            <div class="bg-green-50 p-3 rounded text-sm text-green-700 font-semibold text-center" x-show="metodeBayarAntrian === 'transfer'">
+                                Pembayaran via Transfer (Jumlah Pas / Sesuai Tagihan)
+                            </div>
+
+                            <div class="flex justify-end gap-2 pt-2 border-t">
+                                <button @click="modalBayarAntrian = false" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded text-sm font-bold">Batal</button>
+                                <button @click="prosesBayarAntrianFinal(metodeBayarAntrian)" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm font-bold" x-text="nominalBayarAntrian < (activeAntrian?.total_tagihan || 0) && metodeBayarAntrian === 'tunai' ? 'Simpan sebagai HUTANG' : ('Bayar ' + metodeBayarAntrian.toUpperCase() + ' & Selesaikan')"></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div x-show="kasirTab === 'transaksi_langsung'" class="space-y-6">
+                    <h2 class="text-xl font-bold text-gray-800">Transaksi Langsung (POS)</h2>
+                    
+                    <div class="bg-white p-5 rounded-lg shadow space-y-4">
+                        <h3 class="font-semibold text-gray-700 border-b pb-2">Form 1: Input Transaksi Langsung Baru</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div>
+                                <label class="block text-gray-600 mb-1">No. Transaksi</label>
+                                <input type="text" x-model="formTL.no_transaksi" readonly class="border p-2 rounded w-full bg-gray-100 font-bold font-mono">
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 mb-1">Nama Pelanggan</label>
+                                <input type="text" x-model="formTL.nama_pelanggan" placeholder="Nama Pelanggan" class="border p-2 rounded w-full">
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 mb-1">Plat Nomor Kendaraan</label>
+                                <input type="text" x-model="formTL.plat_nomor" placeholder="B 1234 XYZ" class="border p-2 rounded w-full uppercase font-mono">
                             </div>
                         </div>
 
-                        <div class="bg-white p-5 rounded-lg shadow space-y-4 flex flex-col justify-between">
-                            <div class="space-y-3">
-                                <h3 class="font-semibold text-gray-700 border-b pb-2">Keranjang Belanja</h3>
-                                <div class="space-y-2 max-h-60 overflow-y-auto">
-                                    <template x-for="(item, index) in keranjang" :key="index">
-                                        <div class="flex justify-between items-center bg-gray-50 p-2 rounded text-sm">
-                                            <div>
-                                                <p class="font-bold" x-text="item.nama"></p>
-                                                <p class="text-xs text-gray-500" x-text="'Rp ' + Number(item.harga).toLocaleString() + ' x ' + item.qty"></p>
-                                            </div>
-                                            <div class="flex items-center gap-2">
-                                                <span class="font-bold" x-text="'Rp ' + Number(item.harga * item.qty).toLocaleString()"></span>
-                                                <button @click="hapusItemKeranjang(index)" class="text-red-500 font-bold px-1">×</button>
-                                            </div>
-                                        </div>
-                                    </template>
-                                </div>
-                            </div>
-
-                            <div class="space-y-3 pt-4 border-t">
-                                <div class="flex justify-between font-bold text-lg">
-                                    <span>Total:</span>
-                                    <span class="text-blue-600" x-text="'Rp ' + Number(totalBelanja).toLocaleString()"></span>
-                                </div>
+                        <div class="p-3 bg-gray-50 rounded border space-y-3">
+                            <label class="block text-xs font-bold text-gray-700 uppercase">Pengaturan Mekanik & Jasa Servis</label>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm items-end">
                                 <div>
-                                    <label class="block text-xs font-semibold text-gray-600 mb-1">Nama Mekanik (Opsional)</label>
-                                    <select x-model="selectedMekanik" class="border p-2 rounded w-full text-sm">
+                                    <label class="block text-xs text-gray-600 mb-1 font-semibold">Pilih Mekanik</label>
+                                    <select x-model="tlMekanik" class="border p-2 rounded w-full">
                                         <option value="">-- Pilih Mekanik --</option>
                                         <template x-for="m in mekanikList" :key="m.id">
                                             <option :value="m.nama || m.nama_mekanik" x-text="m.nama || m.nama_mekanik"></option>
                                         </template>
                                     </select>
                                 </div>
-                                <button @click="prosesPembayaran()" class="w-full bg-green-600 text-white py-2 rounded font-bold hover:bg-green-700 transition">Bayar & Cetak Nota</button>
+                                <div>
+                                    <label class="block text-xs text-gray-600 mb-1 font-semibold">Pilih Jasa</label>
+                                    <select x-model="tlJasaId" @change="onJasaTLChange()" class="border p-2 rounded w-full">
+                                        <option value="">-- Pilih Jasa --</option>
+                                        <template x-for="j in jasaList" :key="j.id">
+                                            <option :value="j.id" x-text="j.nama_jasa || j.nama"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs text-gray-600 mb-1 font-semibold">Nominal (Rp)</label>
+                                    <input type="number" x-model.number="tlNominalJasa" placeholder="Nominal" class="border p-2 rounded w-full">
+                                </div>
+                                <div>
+                                    <button @click="tambahJasaTL()" class="w-full bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm font-bold transition">+ Tambah Jasa</button>
+                                </div>
                             </div>
+                        </div>
+
+                        <div class="p-3 bg-gray-50 rounded border space-y-2">
+                            <label class="block text-xs font-bold text-gray-700 uppercase">Tambah Sparepart / Barang</label>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-sm items-end">
+                                <div class="relative md:col-span-2" @click.outside="showTLBarangDropdown = false">
+                                    <label class="block text-xs text-gray-600 mb-1 font-semibold">Pilih / Cari Barang</label>
+                                    <input type="text" 
+                                           x-model="tlSearchBarangQuery" 
+                                           @focus="showTLBarangDropdown = true" 
+                                           @input="showTLBarangDropdown = true; tlBarangId = ''"
+                                           placeholder="🔍 Ketik nama / kode barang..." 
+                                           class="border p-2 rounded w-full text-xs bg-white cursor-pointer">
+                                    
+                                    <div x-show="showTLBarangDropdown" 
+                                         class="absolute z-50 w-full bg-white border border-gray-300 rounded-md mt-1 max-h-48 overflow-y-auto shadow-lg text-xs" 
+                                         style="display: none;">
+                                        <template x-for="b in filteredTLBarangList" :key="b.id || b.kode_barang || b.kode || b.barang">
+                                            <div @click="selectTLBarang(b)" 
+                                                 class="p-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 flex justify-between items-center">
+                                                <span class="font-semibold text-gray-800" x-text="b.nama_barang || b.nama"></span>
+                                                <span class="text-xs bg-blue-100 text-blue-700 font-bold px-1.5 py-0.5 rounded" x-text="'Stok: ' + b.stok"></span>
+                                            </div>
+                                        </template>
+                                        <template x-if="filteredTLBarangList.length === 0">
+                                            <div class="p-2 text-gray-400 italic text-center">Barang tidak ditemukan</div>
+                                        </template>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs text-gray-600 mb-1 font-semibold">Jumlah (Qty)</label>
+                                    <input type="number" x-model.number="tlBarangQty" placeholder="Qty" min="1" class="border p-2 rounded w-full">
+                                </div>
+                                <div>
+                                    <button @click="tambahBarangTL()" class="w-full bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded text-sm font-bold transition">+ Tambah Sparepart</button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="border rounded overflow-hidden">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead class="bg-gray-100 border-b">
+                                    <tr>
+                                        <th class="p-2">Item / Jasa</th>
+                                        <th class="p-2">Mekanik</th>
+                                        <th class="p-2 text-center">Tipe</th>
+                                        <th class="p-2 text-center">Qty</th>
+                                        <th class="p-2 text-right">Subtotal</th>
+                                        <th class="p-2 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="(item, idx) in formTL.keranjang" :key="idx">
+                                        <tr class="border-b">
+                                            <td class="p-2 font-bold" x-text="item.nama"></td>
+                                            <td class="p-2 text-blue-600 font-semibold" x-text="item.mekanik || '-'"></td>
+                                            <td class="p-2 text-center uppercase text-gray-500" x-text="item.tipe"></td>
+                                            <td class="p-2 text-center" x-text="item.qty"></td>
+                                            <td class="p-2 text-right" x-text="'Rp ' + Number(item.harga * item.qty).toLocaleString()"></td>
+                                            <td class="p-2 text-center">
+                                                <button @click="formTL.keranjang.splice(idx, 1)" class="text-red-500 font-bold hover:text-red-700">&times;</button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <template x-if="formTL.keranjang.length === 0">
+                                        <tr><td colspan="6" class="p-3 text-center text-gray-400 italic">Keranjang kosong</td></tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="p-4 bg-gray-50 rounded border space-y-3">
+                            <h4 class="font-bold text-gray-700 text-sm">Rincian Pembayaran Transaksi</h4>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-600 font-semibold">Total Tagihan:</span>
+                                <span class="text-xl font-bold text-blue-600" x-text="'Rp ' + Number(totalTagihanTL).toLocaleString()"></span>
+                            </div>
+
+                            <div class="space-y-1 text-sm">
+                                <label class="block text-gray-600 font-semibold">Metode Pembayaran</label>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <button @click="tlMetodeBayar = 'tunai'" :class="tlMetodeBayar === 'tunai' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'" class="py-2 rounded font-bold text-sm transition">Tunai</button>
+                                    <button @click="tlMetodeBayar = 'transfer'" :class="tlMetodeBayar === 'transfer' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700 hover:bg-gray-300'" class="py-2 rounded font-bold text-sm transition">Transfer</button>
+                                </div>
+                            </div>
+
+                            <div class="space-y-1 text-sm" x-show="tlMetodeBayar === 'tunai'">
+                                <label class="block text-gray-600">Nominal Bayar (Rp)</label>
+                                <input type="number" x-model.number="formTL.bayar" placeholder="Masukkan nominal bayar" class="border p-2 rounded w-full font-bold text-lg bg-white">
+                            </div>
+
+                            <div class="flex justify-between text-sm bg-blue-100 p-2.5 rounded font-semibold text-gray-700" x-show="tlMetodeBayar === 'tunai' && Number(formTL.bayar || 0) >= totalTagihanTL">
+                                <span>Kembalian:</span>
+                                <span class="text-green-600 text-base" x-text="'Rp ' + Number(formTL.bayar - totalTagihanTL).toLocaleString()"></span>
+                            </div>
+
+                            <div class="flex justify-between text-sm bg-red-100 p-2.5 rounded font-semibold text-gray-700" x-show="tlMetodeBayar === 'tunai' && Number(formTL.bayar || 0) < totalTagihanTL">
+                                <span>Kurang (Hutang):</span>
+                                <span class="text-red-600 text-base" x-text="'Rp ' + Number(totalTagihanTL - Number(formTL.bayar || 0)).toLocaleString()"></span>
+                            </div>
+
+                            <div class="bg-green-100 p-2.5 rounded text-sm text-green-700 font-semibold text-center" x-show="tlMetodeBayar === 'transfer'">
+                                Pembayaran via Transfer (Jumlah Pas / Sesuai Tagihan)
+                            </div>
+
+                            <button @click="simpanTransaksiLangsung()" class="w-full bg-green-600 hover:bg-green-700 text-white py-2.5 rounded text-sm font-bold shadow transition" x-text="tlMetodeBayar === 'tunai' && Number(formTL.bayar || 0) < totalTagihanTL ? 'Simpan Transaksi sebagai HUTANG' : 'Bayar & Simpan Transaksi Langsung'">
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-lg shadow-sm border space-y-3">
+                        <h3 class="font-bold text-gray-700">Form 2: Daftar Transaksi Langsung Hari Ini</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead class="bg-gray-100 border-b">
+                                    <tr>
+                                        <th class="p-2">No. Transaksi</th>
+                                        <th class="p-2">Pelanggan / Plat</th>
+                                        <th class="p-2">Detail Item (Jasa / Barang & Mekanik)</th>
+                                        <th class="p-2 text-right">Total Tagihan</th>
+                                        <th class="p-2 text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="tr in transaksiLangsungList" :key="tr.id || tr.no_transaksi">
+                                        <tr class="border-b hover:bg-gray-50">
+                                            <td class="p-2 font-mono font-bold text-blue-600 align-middle" x-text="tr.no_transaksi || tr.id"></td>
+                                            <td class="p-2 align-middle">
+                                                <p class="font-bold" x-text="tr.nama_pelanggan || 'Umum'"></p>
+                                                <p class="text-[11px] text-gray-500 uppercase font-mono" x-text="tr.plat_nomor || '-'"></p>
+                                            </td>
+                                            <td class="p-2">
+                                                <template x-if="tr.items || tr.keranjang">
+                                                    <div class="space-y-1 py-1">
+                                                        <template x-for="k in (typeof (tr.items || tr.keranjang) === 'string' ? JSON.parse((tr.items || tr.keranjang) || '[]') : ((tr.items || tr.keranjang) || []))">
+                                                            <div class="bg-gray-50 p-1 rounded border flex justify-between items-center text-[11px]">
+                                                                <div>
+                                                                    <span class="font-bold uppercase" x-text="k.nama || k.nama_barang"></span> 
+                                                                    <span class="text-gray-500" x-text="'(' + (k.qty || 1) + 'x Rp ' + Number(k.harga || 0).toLocaleString() + ')'"></span>
+                                                                    <template x-if="k.mekanik">
+                                                                        <span class="ml-1 text-blue-600 font-semibold" x-text="'[' + k.mekanik + ']'"></span>
+                                                                    </template>
+                                                                </div>
+                                                                <div class="font-bold text-gray-700" x-text="'Rp ' + Number((k.harga || 0) * (k.qty || 1)).toLocaleString()"></div>
+                                                            </div>
+                                                        </template>
+                                                    </div>
+                                                </template>
+                                                <template x-if="!tr.items && !tr.keranjang">
+                                                    <span class="text-gray-400 italic">Tanpa rincian item</span>
+                                                </template>
+                                            </td>
+                                            <td class="p-2 font-bold text-right align-middle text-blue-600" x-text="'Rp ' + Number(tr.total_tagihan || 0).toLocaleString()"></td>
+                                            <td class="p-2 text-center align-middle">
+                                                <span class="px-2 py-1 rounded text-[10px] font-bold uppercase"
+                                                      :class="tr.status && tr.status.includes('selesai') ? 'bg-green-100 text-green-700' : (tr.status && tr.status.includes('hutang') ? 'bg-red-100 text-red-700' : 'bg-red-100 text-red-600')"
+                                                      x-text="tr.status || 'SELESAI'"></span>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <template x-if="transaksiLangsungList.length === 0">
+                                        <tr><td colspan="5" class="p-4 text-center text-gray-400 italic">Belum ada transaksi langsung hari ini.</td></tr>
+                                    </template>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
 
-                <div x-show="activeTab === 'antrian'" class="space-y-6">
-                    <h2 class="text-xl font-bold text-gray-800">Manajemen Antrian Servis</h2>
+                <div x-show="kasirTab === 'pengeluaran'" class="space-y-6">
+                    <h2 class="text-xl font-bold text-gray-800">Manajemen Pengeluaran Kasir</h2>
                     <div class="bg-white p-5 rounded-lg shadow space-y-4">
-                        <h3 class="font-semibold text-gray-700 border-b pb-2">Form Antrian Servis Baru</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <input type="text" x-model="formAntrian.no_polisi" placeholder="No Polisi Kendaraan" class="border p-2 rounded w-full">
-                            <input type="text" x-model="formAntrian.nama_pelanggan" placeholder="Nama Pelanggan" class="border p-2 rounded w-full">
-                            <select x-model="formAntrian.nama_jasa" class="border p-2 rounded w-full">
-                                <option value="">-- Pilih Jasa Servis --</option>
-                                <template x-for="j in jasaList" :key="j.id">
-                                    <option :value="j.nama_jasa || j.nama" x-text="(j.nama_jasa || j.nama)"></option>
-                                </template>
-                            </select>
-                            <select x-model="formAntrian.nama_mekanik" class="border p-2 rounded w-full">
-                                <option value="">-- Pilih Mekanik --</option>
-                                <template x-for="m in mekanikList" :key="m.id">
-                                    <option :value="m.nama || m.nama_mekanik" x-text="m.nama || m.nama_mekanik"></option>
-                                </template>
-                            </select>
+                        <h3 class="font-semibold text-gray-700 border-b pb-2">Form 1: Input Pengeluaran Baru (Kasir)</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div>
+                                <label class="block text-gray-600 mb-1">ID Pengeluaran</label>
+                                <input type="text" x-model="formPengeluaran.id_pengeluaran" readonly class="border p-2 rounded w-full bg-gray-100 font-bold font-mono">
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 mb-1">Nominal Pengeluaran (Rp)</label>
+                                <input type="number" x-model.number="formPengeluaran.nominal" placeholder="Contoh: 50000" class="border p-2 rounded w-full">
+                            </div>
+                            <div>
+                                <label class="block text-gray-600 mb-1">Keterangan Pengeluaran</label>
+                                <input type="text" x-model="formPengeluaran.keterangan" placeholder="Contoh: Beli konsumsi / bensin" class="border p-2 rounded w-full">
+                            </div>
                         </div>
-                        <button @click="simpanAntrian()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold">Simpan Antrian</button>
+                        <button @click="simpanPengeluaranKasir()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold transition">Simpan Pengeluaran</button>
                     </div>
 
                     <div class="bg-white p-5 rounded-lg shadow space-y-3">
-                        <h3 class="font-semibold text-gray-700 border-b pb-2">Daftar Antrian</h3>
-                        <table class="w-full text-left text-sm border-collapse">
-                            <thead>
-                                <tr class="bg-gray-100 border-b">
-                                    <th class="p-2">No Polisi</th>
-                                    <th class="p-2">Pelanggan</th>
-                                    <th class="p-2">Jasa Servis</th>
-                                    <th class="p-2">Mekanik</th>
-                                    <th class="p-2">Status</th>
-                                    <th class="p-2 text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-for="ant in antrianList" :key="ant.id">
-                                    <tr class="border-b">
-                                        <td class="p-2 font-bold font-mono" x-text="ant.no_polisi"></td>
-                                        <td class="p-2" x-text="ant.nama_pelanggan"></td>
-                                        <td class="p-2" x-text="ant.nama_jasa"></td>
-                                        <td class="p-2 font-semibold text-blue-600" x-text="ant.nama_mekanik || '-'"></td>
-                                        <td class="p-2">
-                                            <span class="px-2 py-1 rounded text-xs font-bold"
-                                                  :class="ant.status === 'Selesai' ? 'bg-green-100 text-green-600' : 'bg-yellow-100 text-yellow-600'"
-                                                  x-text="ant.status || 'Proses'"></span>
-                                        </td>
-                                        <td class="p-2 text-center space-x-1">
-                                            <button @click="selesaikanAntrian(ant)" class="bg-green-600 text-white px-2 py-1 rounded text-xs">Selesai</button>
-                                            <button @click="hapusAntrian(ant.id)" class="bg-red-500 text-white px-2 py-1 rounded text-xs">Hapus</button>
-                                        </td>
+                        <h3 class="font-semibold text-gray-700 border-b pb-2">Form 3: Daftar Pengeluaran Kasir</h3>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-100 border-b text-gray-600">
+                                        <th class="p-2">ID Pengeluaran</th>
+                                        <th class="p-2">Tanggal</th>
+                                        <th class="p-2">Keterangan</th>
+                                        <th class="p-2 text-right">Nominal</th>
                                     </tr>
-                                </template>
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    <template x-for="p in pengeluaranList" :key="p.id || p.id_pengeluaran">
+                                        <tr class="border-b hover:bg-gray-50">
+                                            <td class="p-2 font-mono font-bold text-blue-600" x-text="p.id_pengeluaran || p.id"></td>
+                                            <td class="p-2" x-text="p.tanggal || '-'"></td>
+                                            <td class="p-2" x-text="p.keterangan"></td>
+                                            <td class="p-2 text-right font-bold text-red-600" x-text="'Rp ' + Number(p.nominal || 0).toLocaleString()"></td>
+                                        </tr>
+                                    </template>
+                                    <template x-if="pengeluaranList.length === 0">
+                                        <tr><td colspan="4" class="p-4 text-center text-gray-400">Belum ada data pengeluaran.</td></tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <div x-show="activeTab === 'riwayat'" class="space-y-6">
+                <div x-show="kasirTab === 'riwayat'" class="space-y-6">
                     <h2 class="text-xl font-bold text-gray-800">Riwayat Transaksi Kasir</h2>
                     <div class="bg-white p-5 rounded-lg shadow space-y-4">
-                        <table class="w-full text-left text-sm border-collapse">
-                            <thead>
-                                <tr class="bg-gray-100 border-b text-gray-600">
-                                    <th class="p-2">Tanggal</th>
-                                    <th class="p-2">No Transaksi</th>
-                                    <th class="p-2">Mekanik</th>
-                                    <th class="p-2">Total Bayar</th>
-                                    <th class="p-2 text-center">Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-for="t in transaksiList" :key="t.id">
-                                    <tr class="border-b hover:bg-gray-50">
-                                        <td class="p-2" x-text="t.created_at ? t.created_at.split('T')[0] : (t.tanggal || '-')"></td>
-                                        <td class="p-2 font-mono font-bold" x-text="t.id"></td>
-                                        <td class="p-2 font-semibold text-blue-600" x-text="t.nama_mekanik || t.mekanik || '-'"></td>
-                                        <td class="p-2 font-bold" x-text="'Rp ' + Number(t.total || t.total_bayar || 0).toLocaleString()"></td>
-                                        <td class="p-2 text-center">
-                                            <button @click="bukaDetailTransaksi(t)" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700">Detail</button>
-                                        </td>
-                                    </tr>
-                                </template>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div x-show="activeTab === 'pengeluaran'" class="space-y-6">
-                    <h2 class="text-xl font-bold text-gray-800">Input Pengeluaran Kasir</h2>
-                    <div class="bg-white p-5 rounded-lg shadow space-y-4">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <select x-model="formPengeluaran.kategori" class="border p-2 rounded w-full">
-                                <option value="operasional">Operasional</option>
-                                <option value="lainnya">Lainnya</option>
-                            </select>
-                            <input type="number" x-model="formPengeluaran.nominal" placeholder="Nominal (Rp)" class="border p-2 rounded w-full">
-                            <input type="text" x-model="formPengeluaran.keterangan" placeholder="Keterangan Pengeluaran" class="border p-2 rounded w-full md:col-span-2">
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-3 border-b pb-3">
+                            <h3 class="font-semibold text-gray-700">Form 1: Daftar Riwayat Transaksi</h3>
+                            <div class="flex items-center gap-2 text-sm w-full md:w-auto">
+                                <label class="text-gray-600">Filter Tanggal:</label>
+                                <input type="date" x-model="filterTanggal" class="border p-1.5 rounded">
+                                <button @click="filterTanggal = ''" class="bg-gray-200 hover:bg-gray-300 px-3 py-1.5 rounded text-xs font-bold">Reset</button>
+                            </div>
                         </div>
-                        <button @click="simpanPengeluaran()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold">Simpan Pengeluaran</button>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-100 border-b text-gray-600">
+                                        <th class="p-2">Tanggal</th>
+                                        <th class="p-2">No. Transaksi / Plat</th>
+                                        <th class="p-2">Pelanggan / Mekanik</th>
+                                        <th class="p-2">Total Tagihan</th>
+                                        <th class="p-2">Status</th>
+                                        <th class="p-2 text-center">Aksi</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <template x-for="r in filteredRiwayat" :key="r.id">
+                                        <tr class="border-b hover:bg-gray-50">
+                                            <td class="p-2" x-text="r.created_at ? r.created_at.split('T')[0] : '-' "></td>
+                                            <td class="p-2 font-mono font-bold" x-text="r.no_transaksi || r.no_antrian || r.id"></td>
+                                            <td class="p-2">
+                                                <p class="font-bold" x-text="r.nama_pelanggan || r.plat_nomor || '-'"></p>
+                                                <p class="text-xs text-gray-500" x-text="'Mekanik: ' + (r.mekanik || '-')"></p>
+                                            </td>
+                                            <td class="p-2 font-bold text-blue-600" x-text="'Rp ' + Number(r.total_tagihan || 0).toLocaleString()"></td>
+                                            <td class="p-2">
+                                                <span class="px-2 py-1 rounded text-xs font-bold uppercase" 
+                                                      :class="r.status && r.status.includes('hutang') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'" 
+                                                      x-text="r.status || 'Selesai'"></span>
+                                            </td>
+                                            <td class="p-2 text-center align-middle">
+                                                <button @click="bukaModalRiwayatDetail(r)" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1.5 rounded text-[11px] font-bold whitespace-nowrap shadow-sm">Detail</button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <template x-if="filteredRiwayat.length === 0">
+                                        <tr><td colspan="6" class="p-4 text-center text-gray-400">Tidak ada riwayat transaksi yang cocok.</td></tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -225,208 +648,920 @@
         </div>
     </div>
 
-    <div x-show="modalDetailOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-lg p-6 max-w-lg w-full space-y-4 shadow-xl">
-            <div class="flex justify-between items-center border-b pb-3">
-                <h3 class="font-bold text-lg text-gray-800">Detail Transaksi (Format Antrian Servis)</h3>
-                <button @click="modalDetailOpen = false" class="text-gray-500 font-bold text-lg hover:text-black">×</button>
+    <div x-show="modalRiwayatDetail" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-[100]" style="display: none;">
+        <div class="bg-white p-6 rounded-lg shadow-2xl w-full max-w-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b pb-2">
+                <h3 class="text-lg font-bold text-gray-800">Detail Transaksi: <span class="text-blue-600" x-text="activeRiwayatDetail?.no_transaksi"></span></h3>
+                <button @click="modalRiwayatDetail = false" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
             </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-3 bg-gray-50 p-3 rounded border text-xs">
+                <div>
+                    <span class="text-gray-500 block">No. Transaksi:</span>
+                    <span class="font-bold font-mono text-gray-800" x-text="activeRiwayatDetail?.no_transaksi"></span>
+                </div>
+                <div>
+                    <span class="text-gray-500 block">Tanggal:</span>
+                    <span class="font-semibold text-gray-800" x-text="activeRiwayatDetail?.tanggal"></span>
+                </div>
+                <div>
+                    <span class="text-gray-500 block">Status:</span>
+                    <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase inline-block mt-0.5"
+                          :class="activeRiwayatDetail?.status && activeRiwayatDetail?.status.includes('selesai') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                          x-text="activeRiwayatDetail?.status"></span>
+                </div>
+                <div>
+                    <span class="text-gray-500 block">Pelanggan / Motor:</span>
+                    <span class="font-bold uppercase text-gray-800" x-text="activeRiwayatDetail?.pelanggan"></span>
+                </div>
+                <div>
+                    <span class="text-gray-500 block">Mekanik:</span>
+                    <span class="font-semibold text-blue-600" x-text="activeRiwayatDetail?.mekanik"></span>
+                </div>
+            </div>
+
+            <div class="border rounded overflow-hidden">
+                <table class="w-full text-left text-xs border-collapse">
+                    <thead class="bg-gray-100 border-b">
+                        <tr>
+                            <th class="p-2">Item / Jasa</th>
+                            <th class="p-2 text-center">Qty</th>
+                            <th class="p-2 text-right">Harga Satuan</th>
+                            <th class="p-2 text-right">Subtotal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <template x-for="(item, idx) in activeRiwayatDetail?.items || []" :key="idx">
+                            <tr class="border-b">
+                                <td class="p-2 font-bold uppercase" x-text="item.nama || item.nama_barang"></td>
+                                <td class="p-2 text-center">
+                                    <span x-text="item.qty || 1"></span>
+                                    <template x-if="item.mekanik && item.mekanik !== '-'">
+                                        <span class="ml-1 text-blue-600 font-semibold text-[11px]" x-text="'[' + item.mekanik + ']'"></span>
+                                    </template>
+                                </td>
+                                <td class="p-2 text-right" x-text="'Rp ' + Number(item.harga || item.subtotal || 0).toLocaleString()"></td>
+                                <td class="p-2 text-right font-semibold" x-text="'Rp ' + Number((item.harga || item.subtotal || 0) * (item.qty || 1)).toLocaleString()"></td>
+                            </tr>
+                        </template>
+                        <template x-if="!activeRiwayatDetail?.items || activeRiwayatDetail?.items.length === 0">
+                            <tr><td colspan="4" class="p-3 text-center text-gray-400 italic">Rincian item tidak tersedia di riwayat ini.</td></tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="bg-blue-50 p-3 rounded border flex justify-between items-center text-sm font-bold">
+                <span class="text-gray-800">Total Tagihan:</span>
+                <span class="text-blue-600 text-base" x-text="'Rp ' + Number(activeRiwayatDetail?.total_tagihan || 0).toLocaleString()"></span>
+            </div>
+
+            <div class="flex justify-end pt-2 border-t no-print">
+                <button @click="modalRiwayatDetail = false" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm font-bold transition">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <div x-show="modalStruk" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-[100]" style="display: none;">
+        <div class="bg-white p-6 rounded-lg shadow-2xl w-full max-w-sm space-y-4">
             
-            <div class="space-y-3 text-sm">
-                <div class="bg-gray-50 p-4 rounded-lg border space-y-3">
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500">ID Transaksi</label>
-                            <p class="font-mono font-bold text-gray-800" x-text="activeTransaksi.id"></p>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500">Tanggal</label>
-                            <p class="text-gray-800" x-text="activeTransaksi.created_at ? activeTransaksi.created_at.split('T')[0] : (activeTransaksi.tanggal || '-')"></p>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3">
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500">No Polisi Kendaraan</label>
-                            <p class="font-mono font-bold text-blue-600" x-text="activeTransaksi.no_polisi || '-'"></p>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500">Nama Pelanggan</label>
-                            <p class="font-semibold text-gray-800" x-text="activeTransaksi.nama_pelanggan || activeTransaksi.pelanggan || 'Umum'"></p>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3 pt-2 border-t">
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500">Jasa Servis</label>
-                            <p class="font-semibold text-gray-800" x-text="activeTransaksi.jasa || activeTransaksi.nama_jasa || activeTransaksi.keterangan || '-'"></p>
-                        </div>
-                        <div>
-                            <label class="block text-xs font-semibold text-gray-500">Nama Mekanik</label>
-                            <p class="font-bold text-blue-600" x-text="activeTransaksi.nama_mekanik || activeTransaksi.mekanik || '-'"></p>
-                        </div>
-                    </div>
+            <div id="printable-receipt" class="bg-white text-black font-mono text-xs p-3 border rounded border-gray-300">
+                <div class="text-center font-bold text-sm uppercase tracking-wide">BENGKEL PINTAR MOTOR</div>
+                <div class="text-center text-[10px] text-gray-600 mb-2">Jl. Raya Bengkel No. 88, Karawang<br>Telp: 0812-3456-7890</div>
+                <div class="border-b border-dashed border-gray-400 my-2"></div>
+                
+                <div class="space-y-0.5 text-[11px]">
+                    <div class="flex justify-between"><span>No. Trans:</span><span class="font-bold" x-text="dataStruk.noTransaksi"></span></div>
+                    <div class="flex justify-between"><span>Tanggal:</span><span x-text="dataStruk.tanggal"></span></div>
+                    <div class="flex justify-between"><span>Pelanggan/Plat:</span><span class="font-bold uppercase" x-text="dataStruk.pelanggan"></span></div>
+                    <template x-if="dataStruk.mekanik && dataStruk.mekanik !== '-'">
+                        <div class="flex justify-between"><span>Mekanik:</span><span x-text="dataStruk.mekanik"></span></div>
+                    </template>
                 </div>
 
-                <div class="flex justify-between items-center bg-blue-50 p-3 rounded-lg font-bold text-blue-700">
-                    <span>Total Pembayaran:</span>
-                    <span class="text-lg" x-text="'Rp ' + Number(activeTransaksi.total || activeTransaksi.total_bayar || 0).toLocaleString()"></span>
+                <div class="border-b border-dashed border-gray-400 my-2"></div>
+
+                <div class="space-y-1.5 text-[11px]">
+                    <template x-for="(item, idx) in dataStruk.items" :key="idx">
+                        <div>
+                            <div class="font-bold uppercase" x-text="item.nama || item.nama_barang"></div>
+                            <div class="flex justify-between text-gray-700">
+                                <span x-text="(item.qty || 1) + ' x Rp ' + Number(item.harga || item.subtotal || 0).toLocaleString()"></span>
+                                <span class="font-semibold" x-text="'Rp ' + Number((item.harga || item.subtotal || 0) * (item.qty || 1)).toLocaleString()"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="border-b border-dashed border-gray-400 my-2"></div>
+
+                <div class="space-y-1 text-[11px]">
+                    <div class="flex justify-between font-bold text-xs">
+                        <span>TOTAL TAGIHAN:</span>
+                        <span x-text="'Rp ' + Number(dataStruk.total).toLocaleString()"></span>
+                    </div>
+                    <div class="flex justify-between text-gray-700">
+                        <span>Bayar (<span x-text="dataStruk.metode"></span>):</span>
+                        <span x-text="'Rp ' + Number(dataStruk.bayar).toLocaleString()"></span>
+                    </div>
+                    <template x-if="dataStruk.status.includes('selesai')">
+                        <div class="flex justify-between text-gray-700">
+                            <span>Kembali:</span>
+                            <span x-text="'Rp ' + Number(dataStruk.kembalian).toLocaleString()"></span>
+                        </div>
+                    </template>
+                    <template x-if="dataStruk.status.includes('hutang')">
+                        <div class="flex justify-between text-red-600 font-bold">
+                            <span>Sisa Hutang:</span>
+                            <span x-text="'Rp ' + Number(dataStruk.total - dataStruk.bayar).toLocaleString()"></span>
+                        </div>
+                    </template>
+                </div>
+
+                <div class="border-b border-dashed border-gray-400 my-2"></div>
+                
+                <div class="text-center text-[10px] text-gray-600 mt-2 space-y-0.5">
+                    <p class="font-bold">*** TERIMA KASIH ***</p>
+                    <p>Barang yang sudah dibeli tidak dapat ditukar / dikembalikan</p>
                 </div>
             </div>
 
-            <div class="flex justify-end pt-2">
-                <button @click="modalDetailOpen = false" class="bg-gray-700 text-white px-4 py-2 rounded text-sm font-bold hover:bg-black">Tutup</button>
+            <div class="flex justify-end gap-2 pt-2 border-t no-print">
+                <button @click="modalStruk = false" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded text-sm font-bold">Tutup</button>
+                <button @click="cetakStruk()" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-bold flex items-center gap-1">
+                    🖨️ Cetak Struk
+                </button>
             </div>
         </div>
     </div>
 
     <script>
+        // KUNCI SUPABASE UTAMA
         const SUPABASE_URL = 'https://lppqzaiipeqomwvzsqvr.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwcHF6YWlpcGVxb213dnpzcXZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNjA5MzAsImV4cCI6MjEwMTkzNjkzMH0.rSKXoseYUe3mtON-_s_pC5YsfVWrxFz3tUkuVTyAOn0';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         function kasirApp() {
             return {
-                activeTab: 'pos',
-                currentDate: new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }),
-                barangList: [], supplierList: [], mekanikList: [], jasaList: [], antrianList: [], transaksiList: [],
-                keranjang: [],
-                searchQuery: '',
-                selectedMekanik: '',
-                modalDetailOpen: false,
-                activeTransaksi: {},
-                formAntrian: { no_polisi: '', nama_pelanggan: '', nama_jasa: '', nama_mekanik: '', status: 'Proses' },
-                formPengeluaran: { kategori: 'operasional', nominal: '', keterangan: '', tanggal: new Date().toISOString().split('T')[0] },
+                kasirTab: 'antrian',
+                currentDate: '',
+                isSubmitting: false,
+                barangList: [],
+                jasaList: [],
+                mekanikList: [],
+                antrianList: [],
+                transaksiLangsungList: [],
+                pengeluaranList: [],
+                riwayatList: [],
+                filterTanggal: '',
 
-                async initApp() { await this.loadData(); },
+                // State Searchable Dropdown Barang
+                searchBarangQuery: '',
+                showBarangDropdown: false,
+                tlSearchBarangQuery: '',
+                showTLBarangDropdown: false,
 
-                async loadData() {
-                    try {
-                        const { data: barang } = await _supabase.from('barang').select('*');
-                        this.barangList = barang || [];
-                        const { data: mekanik } = await _supabase.from('mekanik').select('*');
-                        this.mekanikList = mekanik || [];
-                        const { data: jasa } = await _supabase.from('jasa').select('*');
-                        this.jasaList = jasa || [];
-                        const { data: antrian } = await _supabase.from('antrian').select('*');
-                        this.antrianList = antrian || [];
-                        const { data: transaksi } = await _supabase.from('transaksi').select('*');
-                        this.transaksiList = transaksi || [];
-                    } catch (err) {
-                        console.error("Gagal load data kasir:", err);
+                // State Modal Detail Riwayat Ditambahkan
+                modalRiwayatDetail: false,
+                activeRiwayatDetail: null,
+
+                // State Modal Struk Nota
+                modalStruk: false,
+                dataStruk: {
+                    noTransaksi: '',
+                    tanggal: '',
+                    pelanggan: '',
+                    mekanik: '',
+                    items: [],
+                    total: 0,
+                    bayar: 0,
+                    kembalian: 0,
+                    metode: '',
+                    status: ''
+                },
+
+                // FUNGSI MEMBUKA MODAL RIWAYAT TRANSAKSI DITAMBAHKAN
+                bukaModalRiwayatDetail(r) {
+                    let items = [];
+                    // 1. Coba parse dari r.items atau r.keranjang (jika ke depannya riwayat menyimpan array)
+                    if (r.items) {
+                        try { items = typeof r.items === 'string' ? JSON.parse(r.items) : r.items; } catch(e) {}
+                    } else if (r.keranjang) {
+                        try { items = typeof r.keranjang === 'string' ? JSON.parse(r.keranjang) : r.keranjang; } catch(e) {}
                     }
-                },
 
-                get filteredBarang() {
-                    if(!this.searchQuery) return this.barangList;
-                    return this.barangList.filter(b => (b.nama_barang || b.nama || '').toLowerCase().includes(this.searchQuery.toLowerCase()));
-                },
-
-                get totalBelanja() {
-                    return this.keranjang.reduce((acc, curr) => acc + (curr.harga * curr.qty), 0);
-                },
-
-                tambahKeKeranjang(barang) {
-                    let exist = this.keranjang.find(i => i.id === barang.id);
-                    if(exist) {
-                        exist.qty++;
-                    } else {
-                        this.keranjang.push({
-                            id: barang.id,
-                            kode: barang.kode_barang,
-                            nama: barang.nama_barang || barang.nama,
-                            harga: barang.harga_jual || 0,
-                            qty: 1
-                        });
+                    // 2. Fallback: Cari rincian item di daftar Antrian List
+                    if (items.length === 0) {
+                        let antrian = this.antrianList.find(a => a.no_antrian === r.no_transaksi);
+                        if (antrian && antrian.keranjang) {
+                             items = typeof antrian.keranjang === 'string' ? JSON.parse(antrian.keranjang) : antrian.keranjang;
+                        }
                     }
-                },
 
-                hapusItemKeranjang(index) {
-                    this.keranjang.splice(index, 1);
-                },
+                    // 3. Fallback: Cari rincian item di daftar Transaksi Langsung List
+                    if (items.length === 0) {
+                         let tl = this.transaksiLangsungList.find(t => t.no_transaksi === r.no_transaksi);
+                         if (tl) {
+                             let tlItems = tl.items || tl.keranjang;
+                             if (tlItems) {
+                                 items = typeof tlItems === 'string' ? JSON.parse(tlItems) : tlItems;
+                             }
+                         }
+                    }
 
-                async prosesPembayaran() {
-                    if(this.keranjang.length === 0) return alert('Keranjang belanja masih kosong!');
-                    
-                    let total = this.totalBelanja;
-                    let payload = {
-                        total: total,
-                        nama_mekanik: this.selectedMekanik || '',
-                        jasa: this.keranjang.map(i => i.nama).join(', '),
-                        nama_pelanggan: 'Pelanggan Umum',
-                        no_polisi: '-',
-                        keterangan: 'Penjualan POS: ' + this.keranjang.map(i => i.nama).join(', '),
-                        tanggal: new Date().toISOString().split('T')[0]
+                    this.activeRiwayatDetail = {
+                        no_transaksi: r.no_transaksi || r.id,
+                        tanggal: r.created_at ? r.created_at.split('T')[0] : '-',
+                        pelanggan: r.nama_pelanggan || r.plat_nomor || '-',
+                        mekanik: r.mekanik || '-',
+                        total_tagihan: Number(r.total_tagihan || 0),
+                        status: r.status || 'Selesai',
+                        items: items
                     };
+                    this.modalRiwayatDetail = true;
+                },
 
-                    const { error } = await _supabase.from('transaksi').insert([payload]);
-                    if(error) {
-                        alert('Gagal memproses pembayaran: ' + error.message);
-                    } else {
-                        alert('Pembayaran berhasil diproses!');
-                        this.keranjang = [];
-                        this.selectedMekanik = '';
-                        await this.loadData();
+                get filteredBarangList() {
+                    if (!this.searchBarangQuery) return this.barangList;
+                    const q = this.searchBarangQuery.toLowerCase();
+                    return this.barangList.filter(b => {
+                        const nama = (b.nama_barang || b.nama || '').toLowerCase();
+                        const kode = (b.id || b.kode_barang || b.kode || b.barang || '').toString().toLowerCase();
+                        return nama.includes(q) || kode.includes(q);
+                    });
+                },
+
+                get filteredTLBarangList() {
+                    if (!this.tlSearchBarangQuery) return this.barangList;
+                    const q = this.tlSearchBarangQuery.toLowerCase();
+                    return this.barangList.filter(b => {
+                        const nama = (b.nama_barang || b.nama || '').toLowerCase();
+                        const kode = (b.id || b.kode_barang || b.kode || b.barang || '').toString().toLowerCase();
+                        return nama.includes(q) || kode.includes(q);
+                    });
+                },
+
+                get filteredRiwayat() {
+                    if (!this.filterTanggal) return this.riwayatList;
+                    return this.riwayatList.filter(r => {
+                        let tgl = r.created_at ? r.created_at.split('T')[0] : '';
+                        return tgl === this.filterTanggal;
+                    });
+                },
+
+                formAntrian: { no_antrian: 'A-001', plat_nomor: '', jenis_motor: '', keluhan: '', status: 'antri' },
+                
+                modalInputServis: false,
+                activeAntrian: null,
+                formServisDetail: { mekanik: '', nominal_mekanik: 0, keranjang: [] },
+                tempJasaId: '',
+                tempBarangId: '',
+                tempBarangQty: 1,
+
+                modalBayarAntrian: false,
+                nominalBayarAntrian: 0,
+                metodeBayarAntrian: 'tunai',
+
+                formTL: { no_transaksi: 'TL-001', nama_pelanggan: '', plat_nomor: '', keranjang: [], bayar: 0 },
+                tlMekanik: '',
+                tlJasaId: '',
+                tlNominalJasa: 0,
+                tlBarangId: '',
+                tlBarangQty: 1,
+                tlMetodeBayar: 'tunai',
+
+                formPengeluaran: { id_pengeluaran: 'PK-001', nominal: '', keterangan: '' },
+                
+                selectBarang(b) {
+                    this.tempBarangId = b.id || b.kode_barang || b.kode || b.barang;
+                    this.searchBarangQuery = (b.nama_barang || b.nama) + ' (Stok: ' + b.stok + ')';
+                    this.showBarangDropdown = false;
+                },
+
+                selectTLBarang(b) {
+                    this.tlBarangId = b.id || b.kode_barang || b.kode || b.barang;
+                    this.tlSearchBarangQuery = (b.nama_barang || b.nama) + ' (Stok: ' + b.stok + ')';
+                    this.showTLBarangDropdown = false;
+                },
+
+                cetakStruk() {
+                    window.print();
+                },
+
+                onJasaMekanikChange() {
+                    if(!this.tempJasaId) return;
+                    let jasaObj = this.jasaList.find(j => j.id == this.tempJasaId);
+                    if(jasaObj) {
+                        this.formServisDetail.nominal_mekanik = Number(jasaObj.harga_jual || jasaObj.tarif || 50000);
+                    }
+                },
+
+                tambahJasaKeServisDariAtas() {
+                    if(!this.tempJasaId) {
+                        alert('Silakan pilih jasa terlebih dahulu!');
+                        return;
+                    }
+                    let jasaObj = this.jasaList.find(j => j.id == this.tempJasaId);
+                    if(jasaObj) {
+                        let nama = jasaObj.nama_jasa || jasaObj.nama;
+                        let harga = Number(this.formServisDetail.nominal_mekanik || 0);
+                        let mekanikDipilih = this.formServisDetail.mekanik || '-';
+                        
+                        this.formServisDetail.keranjang.push({ 
+                            kode_or_id: jasaObj.id, 
+                            nama: nama, 
+                            harga: harga, 
+                            qty: 1, 
+                            tipe: 'jasa',
+                            mekanik: mekanikDipilih 
+                        });
+
+                        this.tempJasaId = '';
+                        this.formServisDetail.nominal_mekanik = 0;
+                    }
+                },
+
+                bukaModalServis(item) {
+                    this.activeAntrian = item;
+                    this.searchBarangQuery = '';
+                    this.tempBarangId = '';
+                    this.showBarangDropdown = false;
+                    
+                    let cleanKeranjang = [];
+                    let parsedKeranjang = item.keranjang;
+                    if(typeof parsedKeranjang === 'string') {
+                        try { parsedKeranjang = JSON.parse(parsedKeranjang); } catch(e) { parsedKeranjang = []; }
+                    }
+
+                    if(parsedKeranjang && Array.isArray(parsedKeranjang)) {
+                        cleanKeranjang = parsedKeranjang
+                            .filter(k => (k.nama || k.nama_barang))
+                            .map(k => ({
+                                kode_or_id: k.kode_or_id || '',
+                                nama: k.nama || k.nama_barang,
+                                harga: Number(k.harga || k.subtotal || 0),
+                                qty: Number(k.qty || 1),
+                                tipe: k.tipe || 'jasa',
+                                mekanik: k.mekanik || '-'
+                            }));
+                    }
+
+                    this.formServisDetail = {
+                        mekanik: item.mekanik || '',
+                        nominal_mekanik: 0,
+                        keranjang: cleanKeranjang
+                    };
+                    this.modalInputServis = true;
+                },
+
+                initApp() {
+                    const today = new Date();
+                    this.currentDate = today.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                    this.loadMasterData();
+                },
+
+                async loadMasterData() {
+                    try {
+                        let { data: bData } = await _supabase.from('barang').select('*');
+                        this.barangList = bData || [];
+
+                        let { data: jData } = await _supabase.from('jasa').select('*');
+                        this.jasaList = jData || [];
+
+                        let { data: mData } = await _supabase.from('mekanik').select('*');
+                        this.mekanikList = mData || [];
+
+                        let { data: aData } = await _supabase.from('antrian').select('*');
+                        let rawAntrian = aData || [];
+                        this.antrianList = rawAntrian.map(a => {
+                            let k = a.keranjang;
+                            if (typeof k === 'string') {
+                                try { k = JSON.parse(k); } catch(e) { k = []; }
+                            }
+                            return { ...a, keranjang: Array.isArray(k) ? k : [] };
+                        });
+
+                        let nextNo = 1;
+                        if (this.antrianList.length > 0) {
+                            let lastItem = this.antrianList[this.antrianList.length - 1];
+                            if (lastItem && lastItem.no_antrian) {
+                                let num = parseInt(lastItem.no_antrian.replace('A-', ''));
+                                if (!isNaN(num)) nextNo = num + 1;
+                                else nextNo = this.antrianList.length + 1;
+                            } else {
+                                nextNo = this.antrianList.length + 1;
+                            }
+                        }
+                        this.formAntrian.no_antrian = 'A-' + String(nextNo).padStart(3, '0');
+
+                        let { data: tlData } = await _supabase.from('transaksi_langsung').select('*');
+                        this.transaksiLangsungList = tlData || [];
+
+                        let { data: pData } = await _supabase.from('pengeluaran').select('*');
+                        this.pengeluaranList = pData || [];
+                        let nextPk = this.pengeluaranList.length + 1;
+                        this.formPengeluaran.id_pengeluaran = 'PK-' + String(nextPk).padStart(3, '0');
+
+                        let { data: rData } = await _supabase.from('riwayat_transaksi').select('*');
+                        this.riwayatList = rData || [];
+
+                        this.formTL.no_transaksi = 'TL-' + Math.floor(100 + Math.random() * 900);
+                    } catch (err) {
+                        console.error("Gagal mengambil data dari Supabase:", err);
                     }
                 },
 
                 async simpanAntrian() {
-                    if(!this.formAntrian.no_polisi || !this.formAntrian.nama_pelanggan) {
-                        alert('No Polisi dan Nama Pelanggan wajib diisi!');
+                    if (!this.formAntrian.plat_nomor) {
+                        alert('Mohon isi plat nomor motor!');
                         return;
                     }
+
                     const { error } = await _supabase.from('antrian').insert([this.formAntrian]);
-                    if(error) alert('Gagal: ' + error.message);
-                    else {
+                    if (error) {
+                        alert('Gagal menyimpan antrian: ' + error.message);
+                    } else {
                         alert('Antrian berhasil disimpan!');
-                        this.formAntrian = { no_polisi: '', nama_pelanggan: '', nama_jasa: '', nama_mekanik: '', status: 'Proses' };
-                        await this.loadData();
+                        this.formAntrian = { no_antrian: 'A-001', plat_nomor: '', jenis_motor: '', keluhan: '', status: 'antri' };
+                        this.loadMasterData();
                     }
                 },
 
-                async selesaikanAntrian(ant) {
-                    const { error } = await _supabase.from('antrian').update({ status: 'Selesai' }).eq('id', ant.id);
-                    if(error) alert('Gagal: ' + error.message);
-                    else {
-                        // Menyertakan nama_mekanik, nama_jasa, nama_pelanggan, dan no_polisi agar terbaca di index admin
-                        await _supabase.from('transaksi').insert([{
-                            total: 50000,
-                            nama_mekanik: ant.nama_mekanik || '',
-                            jasa: ant.nama_jasa || 'Servis Kendaraan',
-                            nama_pelanggan: ant.nama_pelanggan || 'Pelanggan',
-                            no_polisi: ant.no_polisi || '-',
-                            keterangan: 'Servis Antrian: ' + ant.no_polisi,
-                            tanggal: new Date().toISOString().split('T')[0]
-                        }]);
-                        alert('Antrian diselesaikan!');
-                        await this.loadData();
+                tambahBarangKeServis() {
+                    if(!this.tempBarangId) {
+                        alert('Silakan pilih barang terlebih dahulu!');
+                        return;
+                    }
+                    let bObj = this.barangList.find(b => (b.id || b.kode_barang || b.kode || b.barang) == this.tempBarangId);
+                    if(bObj) {
+                        let qtyReq = Number(this.tempBarangQty || 1);
+                        let stokTersedia = Number(bObj.stok || 0);
+
+                        if (qtyReq <= 0) {
+                            alert('Jumlah barang harus lebih dari 0!');
+                            return;
+                        }
+
+                        let targetKey = bObj.id || bObj.kode_barang || bObj.kode || bObj.barang;
+                        let existingItem = this.formServisDetail.keranjang.find(k => k.kode_or_id == targetKey && k.tipe === 'barang');
+                        let totalQtyCart = (existingItem ? Number(existingItem.qty) : 0) + qtyReq;
+
+                        if (totalQtyCart > stokTersedia) {
+                            alert(`Stok tidak mencukupi! Stok tersedia: ${stokTersedia}. (Sudah di keranjang: ${existingItem ? existingItem.qty : 0})`);
+                            return;
+                        }
+
+                        let nama = bObj.nama_barang || bObj.nama;
+                        let harga = Number(bObj.harga_jual || 0);
+                        let mekanikDipilih = this.formServisDetail.mekanik || '-';
+                        
+                        if (existingItem) {
+                            existingItem.qty = totalQtyCart;
+                        } else {
+                            this.formServisDetail.keranjang.push({ 
+                                kode_or_id: targetKey, 
+                                nama: nama, 
+                                harga: harga, 
+                                qty: qtyReq, 
+                                tipe: 'barang',
+                                mekanik: mekanikDipilih 
+                            });
+                        }
+
+                        this.tempBarangId = '';
+                        this.tempBarangQty = 1;
+                        this.searchBarangQuery = '';
+                        this.showBarangDropdown = false;
                     }
                 },
 
-                async hapusAntrian(id) {
-                    if(confirm("Hapus antrian ini?")) {
-                        const { error } = await _supabase.from('antrian').delete().eq('id', id);
-                        if(error) alert('Gagal: ' + error.message);
-                        else await this.loadData();
+                get hitungTotalServisDetail() {
+                    if (!this.formServisDetail || !Array.isArray(this.formServisDetail.keranjang)) return 0;
+                    return this.formServisDetail.keranjang.reduce((sum, i) => sum + (Number(i.harga || 0) * Number(i.qty || 1)), 0);
+                },
+
+                async simpanProsesServis() {
+                    if (this.isSubmitting) return;
+                    this.isSubmitting = true;
+
+                    try {
+                        let updateData = {
+                            status: 'proses',
+                            mekanik: this.formServisDetail.mekanik,
+                            nominal_mekanik: this.formServisDetail.nominal_mekanik,
+                            keranjang: JSON.stringify(this.formServisDetail.keranjang),
+                            total_tagihan: this.hitungTotalServisDetail
+                        };
+
+                        const { error } = await _supabase
+                            .from('antrian')
+                            .update(updateData)
+                            .eq('no_antrian', this.activeAntrian.no_antrian);
+
+                        if (error) {
+                            alert('Gagal memperbarui servis: ' + error.message);
+                            this.isSubmitting = false;
+                            return;
+                        }
+
+                        for (let item of this.formServisDetail.keranjang) {
+                            if (item.tipe === 'barang') {
+                                let bObj = this.barangList.find(b => 
+                                    (b.id || b.kode_barang || b.kode || b.barang || b.nama_barang || b.nama) == item.kode_or_id ||
+                                    (b.nama_barang || b.nama) == item.nama
+                                );
+
+                                let keyCol = 'id';
+                                let keyVal = item.kode_or_id;
+
+                                if (bObj) {
+                                    if (bObj.id !== undefined) { keyCol = 'id'; keyVal = bObj.id; }
+                                    else if (bObj.kode_barang !== undefined) { keyCol = 'kode_barang'; keyVal = bObj.kode_barang; }
+                                    else if (bObj.kode !== undefined) { keyCol = 'kode'; keyVal = bObj.kode; }
+                                    else if (bObj.barang !== undefined) { keyCol = 'barang'; keyVal = bObj.barang; }
+                                    else if (bObj.nama_barang !== undefined) { keyCol = 'nama_barang'; keyVal = bObj.nama_barang; }
+                                    else if (bObj.nama !== undefined) { keyCol = 'nama'; keyVal = bObj.nama; }
+                                }
+
+                                let { data: freshData } = await _supabase
+                                    .from('barang')
+                                    .select('*')
+                                    .eq(keyCol, keyVal)
+                                    .maybeSingle();
+
+                                if (freshData) {
+                                    let stokSekarang = Number(freshData.stok || 0);
+                                    let sisaStok = Math.max(0, stokSekarang - Number(item.qty || 0));
+
+                                    await _supabase
+                                        .from('barang')
+                                        .update({ stok: sisaStok })
+                                        .eq(keyCol, keyVal);
+                                }
+                            }
+                        }
+
+                        alert('Antrian diperbarui, stok barang berhasil berkurang, & status menjadi PROSES!');
+                        this.modalInputServis = false;
+                        await this.loadMasterData();
+                    } catch (err) {
+                        alert('Terjadi kesalahan sistem: ' + err.message);
+                    } finally {
+                        this.isSubmitting = false;
                     }
                 },
 
-                bukaDetailTransaksi(t) {
-                    this.activeTransaksi = t;
-                    this.modalDetailOpen = true;
+                bukaFormBayarAntrian(item) {
+                    this.activeAntrian = item;
+                    let keranjangList = item.keranjang;
+                    if (typeof keranjangList === 'string') {
+                        try { keranjangList = JSON.parse(keranjangList); } catch(e) { keranjangList = []; }
+                    }
+                    
+                    let total = Number(item.total_tagihan || 0);
+                    if ((!total || total === 0) && Array.isArray(keranjangList)) {
+                        total = keranjangList.reduce((sum, i) => sum + (Number(i.harga || i.subtotal || 0) * Number(i.qty || 1)), 0);
+                    }
+
+                    this.activeAntrian.total_tagihan = total;
+                    this.nominalBayarAntrian = total;
+                    this.metodeBayarAntrian = 'tunai';
+                    this.modalBayarAntrian = true;
                 },
 
-                async simpanPengeluaran() {
-                    if(!this.formPengeluaran.nominal) return alert('Nominal pengeluaran wajib diisi!');
-                    const { error } = await _supabase.from('pengeluaran').insert([this.formPengeluaran]);
-                    if(error) alert('Gagal: ' + error.message);
-                    else {
-                        alert('Pengeluaran kasir berhasil disimpan!');
-                        this.formPengeluaran = { kategori: 'operasional', nominal: '', keterangan: '', tanggal: new Date().toISOString().split('T')[0] };
-                        await this.loadData();
+                async prosesBayarAntrianFinal(metode) {
+                    if (!this.activeAntrian) return;
+
+                    let keranjangList = this.activeAntrian.keranjang;
+                    if (typeof keranjangList === 'string') {
+                        try { keranjangList = JSON.parse(keranjangList); } catch(e) { keranjangList = []; }
+                    }
+
+                    let totalTagihan = Number(this.activeAntrian.total_tagihan || 0);
+                    if ((!totalTagihan || totalTagihan === 0) && Array.isArray(keranjangList)) {
+                        totalTagihan = keranjangList.reduce((sum, i) => sum + (Number(i.harga || i.subtotal || 0) * Number(i.qty || 1)), 0);
+                    }
+
+                    let bayarFinal = metode === 'transfer' ? totalTagihan : Number(this.nominalBayarAntrian || 0);
+                    
+                    let statusBayar = 'selesai ' + metode;
+                    if (metode === 'tunai' && bayarFinal < totalTagihan) {
+                        statusBayar = 'hutang';
+                    }
+
+                    let kembalianFinal = metode === 'transfer' ? 0 : (bayarFinal - totalTagihan > 0 ? bayarFinal - totalTagihan : 0);
+
+                    let payload = {
+                        status: statusBayar,
+                        metode_pembayaran: metode,
+                        bayar: bayarFinal,
+                        kembalian: kembalianFinal,
+                        total_tagihan: totalTagihan
+                    };
+
+                    const { error } = await _supabase
+                        .from('antrian')
+                        .update(payload)
+                        .eq('no_antrian', this.activeAntrian.no_antrian);
+
+                    if (error) {
+                        alert('Gagal memproses pembayaran: ' + error.message);
+                    } else {
+                        try {
+                            await _supabase.from('riwayat_transaksi').insert([{
+                                no_transaksi: this.activeAntrian.no_antrian,
+                                plat_nomor: this.activeAntrian.plat_nomor,
+                                nama_pelanggan: this.activeAntrian.jenis_motor || '-',
+                                mekanik: this.activeAntrian.mekanik || '-',
+                                total_tagihan: totalTagihan,
+                                status: statusBayar
+                            }]);
+                        } catch(e) {
+                            console.error('Simpan riwayat:', e);
+                        }
+
+                        // Set Data Struk & Tampilkan Modal Struk Nota
+                        const now = new Date();
+                        this.dataStruk = {
+                            noTransaksi: this.activeAntrian.no_antrian,
+                            tanggal: now.toLocaleDateString('id-ID') + ' ' + now.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}),
+                            pelanggan: (this.activeAntrian.plat_nomor || '-') + ' (' + (this.activeAntrian.jenis_motor || 'Motor') + ')',
+                            mekanik: this.activeAntrian.mekanik || '-',
+                            items: keranjangList,
+                            total: totalTagihan,
+                            bayar: bayarFinal,
+                            kembalian: kembalianFinal,
+                            metode: metode.toUpperCase(),
+                            status: statusBayar
+                        };
+
+                        this.modalBayarAntrian = false;
+                        this.modalStruk = true;
+                        this.loadMasterData();
+                    }
+                },
+
+                onJasaTLChange() {
+                    if(!this.tlJasaId) return;
+                    let j = this.jasaList.find(x => x.id == this.tlJasaId);
+                    if(j) {
+                        this.tlNominalJasa = Number(j.harga_jual || j.tarif || 50000);
+                    }
+                },
+
+                tambahJasaTL() {
+                    if(!this.tlJasaId) {
+                        alert('Silakan pilih jasa terlebih dahulu!');
+                        return;
+                    }
+                    let j = this.jasaList.find(x => x.id == this.tlJasaId);
+                    if(j) {
+                        this.formTL.keranjang.push({
+                            kode_or_id: j.id,
+                            nama: j.nama_jasa || j.nama,
+                            harga: Number(this.tlNominalJasa || 0),
+                            qty: 1,
+                            tipe: 'jasa',
+                            mekanik: this.tlMekanik || '-'
+                        });
+                        this.tlJasaId = '';
+                        this.tlNominalJasa = 0;
+                    }
+                },
+
+                tambahBarangTL() {
+                    if(!this.tlBarangId) {
+                        alert('Silakan pilih sparepart terlebih dahulu!');
+                        return;
+                    }
+                    let b = this.barangList.find(x => (x.id || x.kode_barang || x.kode || x.barang) == this.tlBarangId);
+                    if(b) {
+                        let qtyReq = Number(this.tlBarangQty || 1);
+                        let stokTersedia = Number(b.stok || 0);
+
+                        if (qtyReq > stokTersedia) {
+                            alert(`Stok tidak mencukupi! Stok tersedia: ${stokTersedia}`);
+                            return;
+                        }
+
+                        let targetKey = b.id || b.kode_barang || b.kode || b.barang;
+                        this.formTL.keranjang.push({
+                            kode_or_id: targetKey,
+                            nama: b.nama_barang || b.nama,
+                            harga: Number(b.harga_jual || 0),
+                            qty: qtyReq,
+                            tipe: 'barang',
+                            mekanik: this.tlMekanik || '-'
+                        });
+                        this.tlBarangId = '';
+                        this.tlBarangQty = 1;
+                        this.tlSearchBarangQuery = '';
+                        this.showTLBarangDropdown = false;
+                    }
+                },
+
+                get totalTagihanTL() {
+                    return this.formTL.keranjang.reduce((sum, i) => sum + (Number(i.harga || 0) * Number(i.qty || 1)), 0);
+                },
+
+                async simpanTransaksiLangsung() {
+                    if (!this.formTL.keranjang || this.formTL.keranjang.length === 0) {
+                        alert('Keranjang belanja masih kosong!');
+                        return;
+                    }
+
+                    if (this.isSubmitting) return;
+                    this.isSubmitting = true;
+                    
+                    let totalTagihan = this.totalTagihanTL;
+                    let bayarFinal = this.tlMetodeBayar === 'transfer' ? totalTagihan : Number(this.formTL.bayar || 0);
+                    let statusBayar = 'selesai ' + this.tlMetodeBayar;
+                    if (this.tlMetodeBayar === 'tunai' && bayarFinal < totalTagihan) {
+                        statusBayar = 'hutang';
+                    }
+                    let kembalianFinal = this.tlMetodeBayar === 'transfer' ? 0 : (bayarFinal - totalTagihan > 0 ? bayarFinal - totalTagihan : 0);
+
+                    let payload = {
+                        no_transaksi: this.formTL.no_transaksi,
+                        nama_pelanggan: this.formTL.nama_pelanggan || 'Umum',
+                        plat_nomor: this.formTL.plat_nomor || '-',
+                        items: JSON.stringify(this.formTL.keranjang),
+                        total_tagihan: totalTagihan,
+                        metode_pembayaran: this.tlMetodeBayar,
+                        bayar: bayarFinal,
+                        kembalian: kembalianFinal,
+                        status: statusBayar
+                    };
+
+                    const resetFormTL = () => {
+                        this.formTL = { 
+                            no_transaksi: 'TL-' + Math.floor(100 + Math.random() * 900), 
+                            nama_pelanggan: '', 
+                            plat_nomor: '', 
+                            keranjang: [], 
+                            bayar: 0 
+                        };
+                        this.tlMekanik = '';
+                        this.tlJasaId = '';
+                        this.tlNominalJasa = 0;
+                        this.tlBarangId = '';
+                        this.tlBarangQty = 1;
+                        this.tlSearchBarangQuery = '';
+                        this.showTLBarangDropdown = false;
+                        this.tlMetodeBayar = 'tunai';
+                    };
+
+                    try {
+                        let { error } = await _supabase.from('transaksi_langsung').insert([payload]);
+
+                        if (error && error.message && error.message.includes('metode_pembayaran')) {
+                            let altPayload = { ...payload };
+                            delete altPayload.metode_pembayaran;
+                            let retry = await _supabase.from('transaksi_langsung').insert([altPayload]);
+                            error = retry.error;
+                        }
+
+                        if (error && error.message && error.message.includes('items')) {
+                            let altPayload = { ...payload, keranjang: payload.items };
+                            delete altPayload.items;
+                            let retry = await _supabase.from('transaksi_langsung').insert([altPayload]);
+                            error = retry.error;
+                        }
+
+                        if (error) {
+                            alert('Gagal menyimpan transaksi langsung: ' + error.message);
+                        } else {
+                            for (let item of this.formTL.keranjang) {
+                                if (item.tipe === 'barang') {
+                                    let bObj = this.barangList.find(b => 
+                                        (b.id || b.kode_barang || b.kode || b.barang || b.nama_barang || b.nama) == item.kode_or_id ||
+                                        (b.nama_barang || b.nama) == item.nama
+                                    );
+
+                                    let keyCol = 'id';
+                                    let keyVal = item.kode_or_id;
+
+                                    if (bObj) {
+                                        if (bObj.id !== undefined) { keyCol = 'id'; keyVal = bObj.id; }
+                                        else if (bObj.kode_barang !== undefined) { keyCol = 'kode_barang'; keyVal = bObj.kode_barang; }
+                                        else if (bObj.kode !== undefined) { keyCol = 'kode'; keyVal = bObj.kode; }
+                                        else if (bObj.barang !== undefined) { keyCol = 'barang'; keyVal = bObj.barang; }
+                                        else if (bObj.nama_barang !== undefined) { keyCol = 'nama_barang'; keyVal = bObj.nama_barang; }
+                                        else if (bObj.nama !== undefined) { keyCol = 'nama'; keyVal = bObj.nama; }
+                                    }
+
+                                    let { data: freshData } = await _supabase
+                                        .from('barang')
+                                        .select('*')
+                                        .eq(keyCol, keyVal)
+                                        .maybeSingle();
+
+                                    if (freshData) {
+                                        let stokSekarang = Number(freshData.stok || 0);
+                                        let sisaStok = Math.max(0, stokSekarang - Number(item.qty || 0));
+
+                                        await _supabase
+                                            .from('barang')
+                                            .update({ stok: sisaStok })
+                                            .eq(keyCol, keyVal);
+                                    }
+                                }
+                            }
+
+                            await _supabase.from('riwayat_transaksi').insert([{
+                                no_transaksi: payload.no_transaksi,
+                                plat_nomor: payload.plat_nomor,
+                                nama_pelanggan: payload.nama_pelanggan,
+                                mekanik: this.tlMekanik || '-',
+                                total_tagihan: totalTagihan,
+                                status: statusBayar
+                            }]);
+
+                            // Set Data Struk Nota
+                            const now = new Date();
+                            this.dataStruk = {
+                                noTransaksi: payload.no_transaksi,
+                                tanggal: now.toLocaleDateString('id-ID') + ' ' + now.toLocaleTimeString('id-ID', {hour: '2-digit', minute:'2-digit'}),
+                                pelanggan: (payload.plat_nomor !== '-' ? payload.plat_nomor : '') + ' / ' + payload.nama_pelanggan,
+                                mekanik: this.tlMekanik || '-',
+                                items: [...this.formTL.keranjang],
+                                total: totalTagihan,
+                                bayar: bayarFinal,
+                                kembalian: kembalianFinal,
+                                metode: this.tlMetodeBayar.toUpperCase(),
+                                status: statusBayar
+                            };
+
+                            resetFormTL();
+                            this.modalStruk = true;
+                            await this.loadMasterData();
+                        }
+                    } catch (err) {
+                        alert('Terjadi kesalahan sistem: ' + err.message);
+                    } finally {
+                        this.isSubmitting = false;
+                    }
+                },
+
+                async simpanPengeluaranKasir() {
+                    const nominal = Number(this.formPengeluaran.nominal);
+                    if (!this.formPengeluaran.nominal || isNaN(nominal) || nominal <= 0) {
+                        alert('Mohon isi nominal pengeluaran dengan benar!');
+                        return;
+                    }
+
+                    if (this.isSubmitting) return;
+                    this.isSubmitting = true;
+
+                    const now = new Date();
+                    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                    const listLength = (Array.isArray(this.pengeluaranList) ? this.pengeluaranList.length : 0);
+                    const idVal = this.formPengeluaran.id_pengeluaran || ('PK-' + String(listLength + 1).padStart(3, '0'));
+
+                    const payload = {
+                        id_pengeluaran: idVal,
+                        kategori: 'Operasional',
+                        nominal: nominal,
+                        keterangan: this.formPengeluaran.keterangan || '-',
+                        tanggal: todayStr
+                    };
+
+                    const resetForm = () => {
+                        this.formPengeluaran.nominal = '';
+                        this.formPengeluaran.keterangan = '';
+                        const updatedLength = (Array.isArray(this.pengeluaranList) ? this.pengeluaranList.length : 0) + 1;
+                        this.formPengeluaran.id_pengeluaran = 'PK-' + String(updatedLength).padStart(3, '0');
+                    };
+
+                    try {
+                        let { error } = await _supabase.from('pengeluaran').insert([payload]);
+
+                        if (error && error.message && error.message.includes('id_pengeluaran')) {
+                            const altPayload = {
+                                id: idVal,
+                                kategori: payload.kategori,
+                                nominal: payload.nominal,
+                                keterangan: payload.keterangan,
+                                tanggal: payload.tanggal
+                            };
+                            const retry = await _supabase.from('pengeluaran').insert([altPayload]);
+                            error = retry.error;
+                        }
+
+                        if (error) {
+                            alert("Gagal menyimpan ke Supabase: " + error.message);
+                        } else {
+                            alert('Pengeluaran berhasil disimpan!');
+                            resetForm();
+                            await this.loadMasterData();
+                        }
+                    } catch (err) {
+                        alert("Terjadi kesalahan sistem: " + err.message);
+                    } finally {
+                        this.isSubmitting = false;
                     }
                 }
-            }
+            };
         }
     </script>
 </body>
