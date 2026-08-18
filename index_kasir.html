@@ -228,35 +228,52 @@
     <div x-show="modalDetailOpen" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
         <div class="bg-white rounded-lg p-6 max-w-lg w-full space-y-4 shadow-xl">
             <div class="flex justify-between items-center border-b pb-3">
-                <h3 class="font-bold text-lg text-gray-800">Detail Riwayat Transaksi</h3>
+                <h3 class="font-bold text-lg text-gray-800">Detail Transaksi (Format Antrian Servis)</h3>
                 <button @click="modalDetailOpen = false" class="text-gray-500 font-bold text-lg hover:text-black">×</button>
             </div>
+            
             <div class="space-y-3 text-sm">
-                <div class="bg-gray-50 p-3 rounded space-y-2 border">
-                    <div class="flex justify-between"><span class="text-gray-500">ID Transaksi:</span><span class="font-mono font-bold" x-text="activeTransaksi.id"></span></div>
-                    <div class="flex justify-between"><span class="text-gray-500">Tanggal:</span><span x-text="activeTransaksi.created_at ? activeTransaksi.created_at.split('T')[0] : (activeTransaksi.tanggal || '-')"></span></div>
-                    <div class="flex justify-between"><span class="text-gray-500">Nama Pelanggan:</span><span class="font-semibold" x-text="activeTransaksi.nama_pelanggan || activeTransaksi.pelanggan || 'Umum'"></span></div>
-                    <div class="flex justify-between"><span class="text-gray-500">No Polisi:</span><span class="font-mono font-semibold" x-text="activeTransaksi.no_polisi || '-'"></span></div>
-                </div>
+                <div class="bg-gray-50 p-4 rounded-lg border space-y-3">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500">ID Transaksi</label>
+                            <p class="font-mono font-bold text-gray-800" x-text="activeTransaksi.id"></p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500">Tanggal</label>
+                            <p class="text-gray-800" x-text="activeTransaksi.created_at ? activeTransaksi.created_at.split('T')[0] : (activeTransaksi.tanggal || '-')"></p>
+                        </div>
+                    </div>
 
-                <div>
-                    <h4 class="font-semibold text-gray-700 mb-2">Rincian Layanan & Jasa Servis:</h4>
-                    <div class="border rounded bg-white p-3 space-y-2">
-                        <div class="flex justify-between items-center text-sm border-b pb-2">
-                            <div>
-                                <p class="font-bold text-gray-800" x-text="activeTransaksi.jasa || activeTransaksi.nama_jasa || activeTransaksi.keterangan || 'Penjualan Barang / Servis'"></p>
-                                <p class="text-xs text-blue-600 font-semibold" x-text="'Mekanik: ' + (activeTransaksi.nama_mekanik || activeTransaksi.mekanik || '-')"></p>
-                            </div>
-                            <span class="font-bold text-gray-700" x-text="'Rp ' + Number(activeTransaksi.total || activeTransaksi.total_bayar || 0).toLocaleString()"></span>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500">No Polisi Kendaraan</label>
+                            <p class="font-mono font-bold text-blue-600" x-text="activeTransaksi.no_polisi || '-'"></p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500">Nama Pelanggan</label>
+                            <p class="font-semibold text-gray-800" x-text="activeTransaksi.nama_pelanggan || activeTransaksi.pelanggan || 'Umum'"></p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-3 pt-2 border-t">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500">Jasa Servis</label>
+                            <p class="font-semibold text-gray-800" x-text="activeTransaksi.jasa || activeTransaksi.nama_jasa || activeTransaksi.keterangan || '-'"></p>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-500">Nama Mekanik</label>
+                            <p class="font-bold text-blue-600" x-text="activeTransaksi.nama_mekanik || activeTransaksi.mekanik || '-'"></p>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex justify-between items-center bg-blue-50 p-3 rounded font-bold text-blue-700">
+                <div class="flex justify-between items-center bg-blue-50 p-3 rounded-lg font-bold text-blue-700">
                     <span>Total Pembayaran:</span>
                     <span class="text-lg" x-text="'Rp ' + Number(activeTransaksi.total || activeTransaksi.total_bayar || 0).toLocaleString()"></span>
                 </div>
             </div>
+
             <div class="flex justify-end pt-2">
                 <button @click="modalDetailOpen = false" class="bg-gray-700 text-white px-4 py-2 rounded text-sm font-bold hover:bg-black">Tutup</button>
             </div>
@@ -336,6 +353,8 @@
                         total: total,
                         nama_mekanik: this.selectedMekanik || '',
                         jasa: this.keranjang.map(i => i.nama).join(', '),
+                        nama_pelanggan: 'Pelanggan Umum',
+                        no_polisi: '-',
                         keterangan: 'Penjualan POS: ' + this.keranjang.map(i => i.nama).join(', '),
                         tanggal: new Date().toISOString().split('T')[0]
                     };
@@ -369,14 +388,14 @@
                     const { error } = await _supabase.from('antrian').update({ status: 'Selesai' }).eq('id', ant.id);
                     if(error) alert('Gagal: ' + error.message);
                     else {
-                        // Catat juga ke transaksi agar terbaca di admin dan pendapatan mekanik
+                        // Catat ke transaksi dengan membawa nama_mekanik, nama_jasa, nama_pelanggan, dan no_polisi
                         await _supabase.from('transaksi').insert([{
-                            total: 50000, // Estimasi atau biaya jasa default
+                            total: 50000,
                             nama_mekanik: ant.nama_mekanik || '',
                             jasa: ant.nama_jasa || 'Servis Kendaraan',
+                            nama_pelanggan: ant.nama_pelanggan || 'Pelanggan',
+                            no_polisi: ant.no_polisi || '-',
                             keterangan: 'Servis Antrian: ' + ant.no_polisi,
-                            no_polisi: ant.no_polisi,
-                            nama_pelanggan: ant.nama_pelanggan,
                             tanggal: new Date().toISOString().split('T')[0]
                         }]);
                         alert('Antrian diselesaikan!');
