@@ -311,10 +311,22 @@
                     <h2 class="text-xl font-bold text-gray-800">Riwayat Transaksi Seluruhnya</h2>
                     <div class="bg-white p-5 rounded-lg shadow space-y-4">
                         <div class="flex flex-col md:flex-row justify-between items-center gap-4 border-b pb-4">
-                            <div class="flex items-center gap-2 w-full md:w-auto">
-                                <label class="text-sm font-semibold text-gray-600">Filter Tanggal:</label>
-                                <input type="date" x-model="filterTanggal" class="border p-2 rounded text-sm">
-                                <button @click="filterTanggal = ''" class="bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm">Reset</button>
+                            <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+                                <div class="flex items-center gap-2">
+                                    <label class="text-sm font-semibold text-gray-600">Filter Tanggal:</label>
+                                    <input type="date" x-model="filterTanggal" class="border p-2 rounded text-sm">
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <label class="text-sm font-semibold text-gray-600">Filter Tipe:</label>
+                                    <select x-model="filterTipe" class="border p-2 rounded text-sm bg-white">
+                                        <option value="">-- Semua Tipe --</option>
+                                        <option value="Kasir">Kasir</option>
+                                        <option value="Restock / Pembelian">Restock / Pembelian</option>
+                                        <option value="Gaji Mekanik">Gaji Mekanik</option>
+                                        <option value="Pengeluaran">Pengeluaran Umum</option>
+                                    </select>
+                                </div>
+                                <button @click="filterTanggal = ''; filterTipe = ''" class="bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm font-semibold hover:bg-gray-300">Reset</button>
                             </div>
                             <div class="flex gap-2 w-full md:w-auto justify-end">
                                 <button @click="downloadCSV()" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-green-700">📥 Download CSV</button>
@@ -530,6 +542,7 @@
                 formPengeluaran: { id: 'PA-001', kategori: 'operasional', nominal: '', keterangan: '' },
                 
                 filterTanggal: '',
+                filterTipe: '',
                 laporanFilter: { hari: '', bulan: '', tahun: '' },
                 filterPendapatanMekanik: { mulai: '', selesai: '' },
                 
@@ -813,8 +826,18 @@
                 },
 
                 get filteredRiwayatList() {
-                    if(!this.filterTanggal) return this.gabunganRiwayatList;
-                    return this.gabunganRiwayatList.filter(item => item.tanggal === this.filterTanggal);
+                    let list = this.gabunganRiwayatList;
+                    if(this.filterTanggal) {
+                        list = list.filter(item => item.tanggal === this.filterTanggal);
+                    }
+                    if(this.filterTipe) {
+                        if(this.filterTipe === 'Pengeluaran') {
+                            list = list.filter(item => item.tipe.includes('Pengeluaran'));
+                        } else {
+                            list = list.filter(item => item.tipe === this.filterTipe);
+                        }
+                    }
+                    return list;
                 },
 
                 async hapusSatuRiwayat(item) {
