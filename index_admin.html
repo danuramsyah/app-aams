@@ -66,7 +66,14 @@
                                 <input type="number" x-model="formBarang.stok" class="border p-2 rounded w-full">
                             </div>
                         </div>
-                        <button @click="simpanBarang()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold">Simpan Data</button>
+                        <div class="flex flex-wrap items-center gap-2 pt-2">
+                            <button @click="simpanBarang()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-blue-700">Simpan Data</button>
+                            <button @click="downloadTemplateCSV()" class="bg-emerald-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-emerald-700">📥 Download Template CSV</button>
+                            <label class="bg-indigo-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-indigo-700 cursor-pointer inline-block">
+                                📤 Import CSV
+                                <input type="file" accept=".csv" class="hidden" @change="importCSV($event)">
+                            </label>
+                        </div>
                     </div>
                     
                     <div class="bg-white p-5 rounded-lg shadow">
@@ -583,6 +590,62 @@
                     } catch (err) {
                         console.error("Gagal koneksi ke Supabase:", err);
                     }
+                },
+
+                // --- TEMPLATE & IMPORT CSV BARANG ---
+                downloadTemplateCSV() {
+                    let csvContent = "data:text/csv;charset=utf-8,kode_barang,nama_barang,supplier,harga_beli,harga_jual,stok\n";
+                    csvContent += "BRG-001,Contoh Nama Sparepart,Nama Supplier,50000,75000,10\n";
+                    let encodedUri = encodeURI(csvContent);
+                    let link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", "template_master_barang.csv");
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                },
+
+                importCSV(event) {
+                    let file = event.target.files[0];
+                    if (!file) return;
+                    let reader = new FileReader();
+                    reader.onload = async (e) => {
+                        let text = e.target.result;
+                        let lines = text.split("\n").map(l => l.trim()).filter(l => l.length > 0);
+                        if(lines.length <= 1) {
+                            alert("File CSV kosong atau format tidak sesuai.");
+                            event.target.value = '';
+                            return;
+                        }
+
+                        let successCount = 0;
+                        let failCount = 0;
+
+                        // Lewati header (baris index 0)
+                        for(let i = 1; i < lines.length; i++) {
+                            let row = lines[i].split(",").map(val => val.replace(/^"|"$/g, '').trim());
+                            if(row.length >= 6) {
+                                let [kode_barang, nama_barang, supplier, harga_beli, harga_jual, stok] = row;
+                                let payload = {
+                                    kode_barang: kode_barang || ('BRG-' + String(this.barangList.length + i).padStart(3, '0')),
+                                    nama_barang: nama_barang || '',
+                                    supplier: supplier || '',
+                                    harga_beli: Number(harga_beli) || 0,
+                                    harga_jual: Number(harga_jual) || 0,
+                                    stok: Number(stok) || 0
+                                };
+
+                                let { error } = await _supabase.from('barang').insert([payload]);
+                                if(!error) successCount++;
+                                else failCount++;
+                            }
+                        }
+
+                        alert(`Import selesai!\nBerhasil ditambahkan: ${successCount} item\nGagal/Format salah: ${failCount} item`);
+                        event.target.value = '';
+                        await this.loadData();
+                    };
+                    reader.readAsText(file);
                 },
 
                 // --- MASTER: MEKANIK, JASA, SUPPLIER (CRUD Edit & Hapus) ---
