@@ -250,44 +250,54 @@
                     <h2 class="text-xl font-bold text-gray-800">Manajemen Pengeluaran & Pendapatan Mekanik</h2>
                     
                     <div class="bg-white p-5 rounded-lg shadow space-y-4">
-                        <h3 class="font-semibold text-gray-700 border-b pb-2">Form Input Pengeluaran</h3>
+                        <h3 class="font-semibold text-gray-700 border-b pb-2">Form Input Pengeluaran Umum</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <input type="text" x-model="formPengeluaran.id" readonly class="border p-2 rounded w-full bg-gray-100 font-bold">
                             <select x-model="formPengeluaran.kategori" class="border p-2 rounded w-full">
-                                <option value="gaji mekanik">Gaji Mekanik</option>
                                 <option value="operasional">Operasional</option>
                                 <option value="lainnya">Lainnya</option>
                             </select>
                             <input type="number" x-model="formPengeluaran.nominal" placeholder="Nominal (Rp)" class="border p-2 rounded w-full">
-                            <input type="text" x-model="formPengeluaran.keterangan" placeholder="Keterangan" class="border p-2 rounded w-full">
+                            <input type="text" x-model="formPengeluaran.keterangan" placeholder="Keterangan Pengeluaran" class="border p-2 rounded w-full">
                         </div>
                         <button @click="simpanPengeluaran()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-blue-700 transition">Simpan Pengeluaran</button>
                     </div>
 
                     <div class="bg-white p-5 rounded-lg shadow space-y-4">
                         <h3 class="font-semibold text-gray-700 border-b pb-2">Daftar Pendapatan Mekanik (Berdasarkan Hasil Jasa Riwayat Kasir)</h3>
+                        
+                        <div class="flex items-center gap-2 mb-2 w-full md:w-auto">
+                            <label class="text-sm font-semibold text-gray-600">Filter Rentang Waktu:</label>
+                            <input type="date" x-model="filterPendapatanMekanik.mulai" class="border p-1.5 rounded text-sm">
+                            <span class="text-gray-500">-</span>
+                            <input type="date" x-model="filterPendapatanMekanik.selesai" class="border p-1.5 rounded text-sm">
+                            <button @click="filterPendapatanMekanik = {mulai: '', selesai: ''}" class="bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-xs font-bold hover:bg-gray-300">Reset</button>
+                        </div>
+
                         <div class="overflow-x-auto pt-2">
                             <table class="w-full text-left text-sm border-collapse">
                                 <thead>
                                     <tr class="bg-gray-100 border-b text-gray-600">
-                                        <th class="p-2">Tanggal</th>
                                         <th class="p-2">Nama Mekanik</th>
-                                        <th class="p-2">Layanan Jasa</th>
-                                        <th class="p-2">Pendapatan Jasa</th>
+                                        <th class="p-2">Total Layanan Jasa</th>
+                                        <th class="p-2">Total Pendapatan Jasa</th>
+                                        <th class="p-2 text-center">Aksi (Bayar Gaji)</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <template x-for="item in pendapatanMekanikDariKasir" :key="item.id">
+                                    <template x-for="item in rekapPendapatanMekanik" :key="item.nama_mekanik">
                                         <tr class="border-b hover:bg-gray-50">
-                                            <td class="p-2" x-text="item.tanggal || '-'"></td>
                                             <td class="p-2 font-bold" x-text="item.nama_mekanik"></td>
-                                            <td class="p-2" x-text="item.nama_jasa || '-'"></td>
-                                            <td class="p-2 text-blue-600 font-bold" x-text="'Rp ' + Number(item.pendapatan || 0).toLocaleString()"></td>
+                                            <td class="p-2" x-text="item.total_layanan + ' Transaksi / Jasa'"></td>
+                                            <td class="p-2 text-blue-600 font-bold" x-text="'Rp ' + Number(item.total_pendapatan || 0).toLocaleString()"></td>
+                                            <td class="p-2 text-center">
+                                                <button @click="bayarGajiMekanik(item)" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 shadow-sm" :disabled="item.total_pendapatan === 0" :class="item.total_pendapatan === 0 ? 'opacity-50 cursor-not-allowed' : ''">Bayar Gaji</button>
+                                            </td>
                                         </tr>
                                     </template>
-                                    <template x-if="pendapatanMekanikDariKasir.length === 0">
+                                    <template x-if="rekapPendapatanMekanik.length === 0">
                                         <tr>
-                                            <td colspan="4" class="p-4 text-center text-gray-500">Belum ada data pendapatan mekanik dari transaksi kasir.</td>
+                                            <td colspan="4" class="p-4 text-center text-gray-500">Tidak ada data pendapatan mekanik pada rentang waktu ini.</td>
                                         </tr>
                                     </template>
                                 </tbody>
@@ -410,7 +420,7 @@
             return {
                 userRole: 'admin',
                 adminTab: 'barang',
-                barangList: [], supplierList: [], mekanikList: [], jasaList: [], pengeluaranList: [], transaksiList: [], pembelianList: [],
+                barangList: [], supplierList: [], mekanikList: [], jasaList: [], pengeluaranList: [], transaksiList: [], pembelianList: [], riwayatTransaksiList: [], antrianList: [],
                 
                 editMekanikId: null, editJasaId: null, editSupplierId: null,
                 
@@ -422,6 +432,7 @@
                 
                 filterTanggal: '',
                 laporanFilter: { hari: '', bulan: '', tahun: '' },
+                filterPendapatanMekanik: { mulai: '', selesai: '' },
                 
                 async initApp() { await this.loadData(); },
                 
@@ -445,11 +456,20 @@
                         this.pengeluaranList = pengeluaran || [];
                         this.formPengeluaran.id = 'PA-00' + (this.pengeluaranList.length + 1);
 
+                        // Ambil semua transaksi (kasir pos/antrian lama)
                         const { data: transaksi } = await _supabase.from('transaksi').select('*');
                         this.transaksiList = transaksi || [];
 
                         const { data: pembelian } = await _supabase.from('pembelian').select('*');
                         this.pembelianList = pembelian || [];
+
+                        // Ambil data riwayat_transaksi dari tabel kasir terbaru
+                        const { data: riwayat } = await _supabase.from('riwayat_transaksi').select('*');
+                        this.riwayatTransaksiList = riwayat || [];
+                        
+                        const { data: antrian } = await _supabase.from('antrian').select('*');
+                        this.antrianList = antrian || [];
+
                     } catch (err) {
                         console.error("Gagal koneksi ke Supabase:", err);
                     }
@@ -540,31 +560,101 @@
                     }
                 },
 
-                // --- PENDAPATAN MEKANIK DARI TRANSAKSI KASIR ---
-                get pendapatanMekanikDariKasir() {
-                    return this.transaksiList
-                        .filter(t => t.nama_mekanik || t.mekanik || t.jasa || t.nama_jasa)
-                        .map((t, idx) => ({
-                            id: t.id || idx,
-                            tanggal: t.created_at ? t.created_at.split('T')[0] : (t.tanggal || '-'),
-                            nama_mekanik: t.nama_mekanik || t.mekanik || '-',
-                            nama_jasa: t.jasa || t.nama_jasa || '-',
-                            pendapatan: t.biaya_jasa || t.pendapatan_jasa || t.total_jasa || t.total || 0
-                        }));
+                // --- PENDAPATAN MEKANIK (DARI TRANSAKSI KASIR DAN TABEL ANTRIAN JSON) ---
+                get rekapPendapatanMekanik() {
+                    let rekapData = {};
+
+                    // Ekstraksi data mekanik dan jasa dari antrianList yang statusnya selesai
+                    this.antrianList.forEach(a => {
+                        if (a.status && a.status.toLowerCase().includes('selesai')) {
+                            let tgl = a.created_at ? a.created_at.split('T')[0] : (a.tanggal || '');
+                            let masukDalamFilter = true;
+                            if (this.filterPendapatanMekanik.mulai && this.filterPendapatanMekanik.selesai) {
+                                if (tgl < this.filterPendapatanMekanik.mulai || tgl > this.filterPendapatanMekanik.selesai) {
+                                    masukDalamFilter = false;
+                                }
+                            }
+
+                            if (masukDalamFilter && a.keranjang) {
+                                let keranjangArr = [];
+                                try {
+                                    keranjangArr = typeof a.keranjang === 'string' ? JSON.parse(a.keranjang) : a.keranjang;
+                                } catch(e) {}
+                                
+                                keranjangArr.forEach(item => {
+                                    if (item.tipe === 'jasa' && item.mekanik && item.mekanik !== '-') {
+                                        let namaMekanik = item.mekanik.toUpperCase();
+                                        if (!rekapData[namaMekanik]) {
+                                            rekapData[namaMekanik] = { nama_mekanik: namaMekanik, total_pendapatan: 0, total_layanan: 0 };
+                                        }
+                                        rekapData[namaMekanik].total_pendapatan += (Number(item.harga || 0) * Number(item.qty || 1));
+                                        rekapData[namaMekanik].total_layanan += Number(item.qty || 1);
+                                    }
+                                });
+                            }
+                        }
+                    });
+
+                    // Konversi object map ke array untuk iterasi tabel
+                    let hasilArray = Object.values(rekapData);
+                    return hasilArray;
+                },
+
+                async bayarGajiMekanik(item) {
+                    if(confirm(`Konfirmasi pembayaran gaji untuk mekanik ${item.nama_mekanik} sebesar Rp ${Number(item.total_pendapatan).toLocaleString()}?`)) {
+                        
+                        const now = new Date();
+                        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                        const listLength = this.pengeluaranList.length;
+                        const idVal = 'PK-' + String(listLength + 1).padStart(3, '0');
+
+                        const payload = {
+                            id_pengeluaran: idVal,
+                            kategori: 'Gaji Mekanik',
+                            nominal: item.total_pendapatan,
+                            keterangan: `Pembayaran Gaji Mekanik (${item.nama_mekanik}) - ${item.total_layanan} Layanan Jasa`,
+                            tanggal: todayStr
+                        };
+
+                        try {
+                            let { error } = await _supabase.from('pengeluaran').insert([payload]);
+                            if (error && error.message && error.message.includes('id_pengeluaran')) {
+                                const altPayload = {
+                                    id: idVal,
+                                    kategori: payload.kategori,
+                                    nominal: payload.nominal,
+                                    keterangan: payload.keterangan,
+                                    tanggal: payload.tanggal
+                                };
+                                const retry = await _supabase.from('pengeluaran').insert([altPayload]);
+                                error = retry.error;
+                            }
+
+                            if (error) {
+                                alert("Gagal mencatat pengeluaran: " + error.message);
+                            } else {
+                                alert(`Gaji mekanik ${item.nama_mekanik} berhasil dicatat sebagai pengeluaran!`);
+                                await this.loadData();
+                            }
+                        } catch(err) {
+                            alert("Terjadi kesalahan: " + err.message);
+                        }
+                    }
                 },
 
                 // --- RIWAYAT TRANSAKSI GABUNGAN & FILTER ---
                 get gabunganRiwayatList() {
-                    let listKasir = this.transaksiList.map(t => ({
-                        uniqueId: 'kasir-' + t.id,
+                    // Gabungkan riwayat dari tabel antrian (kasir)
+                    let listKasirAntrian = this.antrianList.filter(a => a.status && a.status.toLowerCase().includes('selesai')).map(t => ({
+                        uniqueId: 'antrian-' + t.id,
                         originalId: t.id,
-                        source: 'transaksi',
+                        source: 'antrian',
                         tanggal: t.created_at ? t.created_at.split('T')[0] : (t.tanggal || '-'),
                         tipe: 'Kasir',
-                        keterangan: t.keterangan || t.nama_barang || t.item || 'Transaksi Penjualan/Servis',
-                        jumlah: t.jumlah || t.qty || 1,
-                        total: t.total || t.total_bayar || 0,
-                        status: 'Lunas'
+                        keterangan: 'No Antrian/Trx: ' + (t.no_antrian || t.id) + ' | Plat: ' + (t.plat_nomor || '-'),
+                        jumlah: 1, // 1 transaksi utuh
+                        total: t.total_tagihan || 0,
+                        status: t.status && t.status.toLowerCase().includes('hutang') ? 'Hutang' : 'Lunas'
                     }));
 
                     let listPembelian = this.pembelianList.map(p => ({
@@ -579,7 +669,7 @@
                         status: p.metode_pembayaran === 'Tempo' ? 'Hutang' : 'Lunas'
                     }));
 
-                    return [...listKasir, ...listPembelian].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+                    return [...listKasirAntrian, ...listPembelian].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
                 },
 
                 get filteredRiwayatList() {
@@ -589,7 +679,7 @@
 
                 async hapusSatuRiwayat(item) {
                     if(confirm("Yakin ingin menghapus transaksi ini?")) {
-                        const tableTarget = item.source === 'transaksi' ? 'transaksi' : 'pembelian';
+                        const tableTarget = item.source === 'antrian' ? 'antrian' : 'pembelian';
                         const { error } = await _supabase.from(tableTarget).delete().eq('id', item.originalId);
                         if(error) alert('Gagal menghapus: ' + error.message);
                         else await this.loadData();
@@ -598,8 +688,10 @@
 
                 async hapusSemuaRiwayat() {
                     if(confirm("PERINGATAN: Yakin ingin menghapus seluruh riwayat transaksi (kasir dan pembelian)?")) {
-                        for(let t of this.transaksiList) {
-                            await _supabase.from('transaksi').delete().eq('id', t.id);
+                        for(let a of this.antrianList) {
+                             if(a.status && a.status.toLowerCase().includes('selesai')){
+                                 await _supabase.from('antrian').delete().eq('id', a.id);
+                             }
                         }
                         for(let p of this.pembelianList) {
                             await _supabase.from('pembelian').delete().eq('id', p.id);
@@ -625,7 +717,7 @@
 
                 // --- LAPORAN KEUANGAN DENGAN FILTER WAKTU & SEMUA TRANSAKSI ---
                 get hitungLaporan() {
-                    let filteredKasir = this.transaksiList;
+                    let filteredKasir = this.antrianList.filter(a => a.status && a.status.toLowerCase().includes('selesai'));
                     let filteredPengeluaran = this.pengeluaranList;
 
                     if(this.laporanFilter.hari) {
@@ -639,9 +731,26 @@
                         filteredPengeluaran = filteredPengeluaran.filter(p => (p.created_at && p.created_at.startsWith(this.laporanFilter.tahun)) || (p.tanggal && p.tanggal.startsWith(this.laporanFilter.tahun)));
                     }
 
-                    let pemasukanKotor = filteredKasir.reduce((acc, curr) => acc + Number(curr.total || curr.total_bayar || 0), 0);
-                    let hpp = filteredKasir.reduce((acc, curr) => acc + Number(curr.hpp || curr.modal || 0), 0);
+                    let pemasukanKotor = filteredKasir.reduce((acc, curr) => acc + Number(curr.total_tagihan || 0), 0);
                     let totalPengeluaran = filteredPengeluaran.reduce((acc, curr) => acc + Number(curr.nominal || curr.jumlah || 0), 0);
+                    
+                    // Hitung HPP Modal Terjual dari detail keranjang kasir
+                    let hpp = 0;
+                    filteredKasir.forEach(t => {
+                        if(t.keranjang) {
+                             let items = [];
+                             try{ items = typeof t.keranjang === 'string' ? JSON.parse(t.keranjang) : t.keranjang; } catch(e){}
+                             items.forEach(i => {
+                                 if(i.tipe === 'barang') {
+                                      // Cari harga beli asli dari master barang
+                                      let targetB = this.barangList.find(b => (b.id || b.kode_barang || b.kode) == i.kode_or_id);
+                                      let hbeli = targetB ? Number(targetB.harga_beli || 0) : 0;
+                                      hpp += hbeli * Number(i.qty || 1);
+                                 }
+                             });
+                        }
+                    });
+
                     let pemasukanBersih = pemasukanKotor - hpp - totalPengeluaran;
 
                     return {
@@ -703,11 +812,36 @@
                 },
 
                 async simpanPengeluaran() {
-                    const { error } = await _supabase.from('pengeluaran').insert([this.formPengeluaran]);
-                    if(error) alert('Gagal: ' + error.message);
-                    else {
-                        alert('Pengeluaran disimpan!');
-                        await this.loadData();
+                    if(!this.formPengeluaran.nominal) return alert('Nominal pengeluaran wajib diisi!');
+                    
+                    const now = new Date();
+                    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                    const listLength = (Array.isArray(this.pengeluaranList) ? this.pengeluaranList.length : 0);
+                    const idVal = this.formPengeluaran.id || ('PK-' + String(listLength + 1).padStart(3, '0'));
+
+                    const payload = {
+                        id_pengeluaran: idVal,
+                        kategori: this.formPengeluaran.kategori,
+                        nominal: Number(this.formPengeluaran.nominal),
+                        keterangan: this.formPengeluaran.keterangan || '-',
+                        tanggal: todayStr
+                    };
+
+                    try {
+                        let { error } = await _supabase.from('pengeluaran').insert([payload]);
+                        if(error && error.message.includes('id_pengeluaran')){
+                            const altPayload = { ...payload, id: idVal };
+                            let retry = await _supabase.from('pengeluaran').insert([altPayload]);
+                            error = retry.error;
+                        }
+                        if(error) alert('Gagal: ' + error.message);
+                        else {
+                            alert('Pengeluaran disimpan!');
+                            this.formPengeluaran = { id: 'PK-' + String(listLength + 2).padStart(3, '0'), kategori: 'operasional', nominal: '', keterangan: '' };
+                            await this.loadData();
+                        }
+                    } catch(err) {
+                        alert('Terjadi kesalahan: ' + err.message);
                     }
                 }
             }
