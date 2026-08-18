@@ -137,8 +137,6 @@
                                                       x-text="item.status ? item.status.toUpperCase() : 'ANTRI'"></span>
                                             </td>
                                             <td class="p-2 text-center align-middle space-y-1">
-                                                <!-- Tombol Detail -->
-                                                <button @click="bukaModalDetail(item)" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded text-[11px] font-bold whitespace-nowrap block w-full mb-1">Detail</button>
                                                 <template x-if="!item.status || !item.status.includes('selesai')">
                                                     <button @click="bukaModalServis(item)" class="bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-[11px] font-bold whitespace-nowrap block w-full mb-1">+ Input / Edit</button>
                                                 </template>
@@ -494,7 +492,6 @@
                                         <th class="p-2">Detail Item (Jasa / Barang & Mekanik)</th>
                                         <th class="p-2 text-right">Total Tagihan</th>
                                         <th class="p-2 text-center">Status</th>
-                                        <th class="p-2 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -532,14 +529,10 @@
                                                       :class="tr.status && tr.status.includes('selesai') ? 'bg-green-100 text-green-700' : (tr.status && tr.status.includes('hutang') ? 'bg-red-100 text-red-700' : 'bg-red-100 text-red-600')"
                                                       x-text="tr.status || 'SELESAI'"></span>
                                             </td>
-                                            <td class="p-2 text-center align-middle">
-                                                <!-- Tombol Detail -->
-                                                <button @click="bukaModalDetail(tr)" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded text-[11px] font-bold whitespace-nowrap">Detail</button>
-                                            </td>
                                         </tr>
                                     </template>
                                     <template x-if="transaksiLangsungList.length === 0">
-                                        <tr><td colspan="6" class="p-4 text-center text-gray-400 italic">Belum ada transaksi langsung hari ini.</td></tr>
+                                        <tr><td colspan="5" class="p-4 text-center text-gray-400 italic">Belum ada transaksi langsung hari ini.</td></tr>
                                     </template>
                                 </tbody>
                             </table>
@@ -638,8 +631,7 @@
                                                       x-text="r.status || 'Selesai'"></span>
                                             </td>
                                             <td class="p-2 text-center align-middle">
-                                                <!-- Tombol Detail -->
-                                                <button @click="bukaModalDetail(r)" class="bg-gray-600 hover:bg-gray-700 text-white px-2 py-1 rounded text-[11px] font-bold whitespace-nowrap">Detail</button>
+                                                <button @click="bukaModalRiwayatDetail(r)" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1.5 rounded text-[11px] font-bold whitespace-nowrap shadow-sm">Detail</button>
                                             </td>
                                         </tr>
                                     </template>
@@ -656,102 +648,75 @@
         </div>
     </div>
 
-    <!-- Modal Popup Detail Transaksi / Servis -->
-    <div x-show="modalDetail" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50" style="display: none;">
-        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+    <div x-show="modalRiwayatDetail" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-[100]" style="display: none;">
+        <div class="bg-white p-6 rounded-lg shadow-2xl w-full max-w-2xl space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b pb-2">
-                <h3 class="text-lg font-bold text-gray-800">Detail Transaksi / Servis: <span class="text-blue-600" x-text="activeDetail?.no_transaksi"></span></h3>
-                <button @click="modalDetail = false" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+                <h3 class="text-lg font-bold text-gray-800">Detail Transaksi: <span class="text-blue-600" x-text="activeRiwayatDetail?.no_transaksi"></span></h3>
+                <button @click="modalRiwayatDetail = false" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
             </div>
 
-            <!-- Informasi Ringkas Transaksi -->
             <div class="grid grid-cols-2 md:grid-cols-3 gap-3 bg-gray-50 p-3 rounded border text-xs">
                 <div>
-                    <span class="text-gray-500 block">No. Transaksi / Antrian:</span>
-                    <span class="font-bold font-mono text-gray-800" x-text="activeDetail?.no_transaksi"></span>
+                    <span class="text-gray-500 block">No. Transaksi:</span>
+                    <span class="font-bold font-mono text-gray-800" x-text="activeRiwayatDetail?.no_transaksi"></span>
                 </div>
                 <div>
                     <span class="text-gray-500 block">Tanggal:</span>
-                    <span class="font-semibold text-gray-800" x-text="activeDetail?.tanggal"></span>
+                    <span class="font-semibold text-gray-800" x-text="activeRiwayatDetail?.tanggal"></span>
                 </div>
                 <div>
                     <span class="text-gray-500 block">Status:</span>
                     <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase inline-block mt-0.5"
-                          :class="activeDetail?.status && activeDetail?.status.includes('selesai') ? 'bg-green-100 text-green-700' : (activeDetail?.status && activeDetail?.status.includes('hutang') ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700')"
-                          x-text="activeDetail?.status"></span>
+                          :class="activeRiwayatDetail?.status && activeRiwayatDetail?.status.includes('selesai') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'"
+                          x-text="activeRiwayatDetail?.status"></span>
                 </div>
                 <div>
-                    <span class="text-gray-500 block">Pelanggan / Plat:</span>
-                    <span class="font-bold uppercase text-gray-800" x-text="activeDetail?.pelanggan"></span>
+                    <span class="text-gray-500 block">Pelanggan / Motor:</span>
+                    <span class="font-bold uppercase text-gray-800" x-text="activeRiwayatDetail?.pelanggan"></span>
                 </div>
                 <div>
                     <span class="text-gray-500 block">Mekanik:</span>
-                    <span class="font-semibold text-blue-600" x-text="activeDetail?.mekanik"></span>
-                </div>
-                <div>
-                    <span class="text-gray-500 block">Metode Pembayaran:</span>
-                    <span class="font-semibold uppercase text-gray-800" x-text="activeDetail?.metode"></span>
+                    <span class="font-semibold text-blue-600" x-text="activeRiwayatDetail?.mekanik"></span>
                 </div>
             </div>
 
-            <!-- Table Rincian Item / Jasa -->
             <div class="border rounded overflow-hidden">
                 <table class="w-full text-left text-xs border-collapse">
                     <thead class="bg-gray-100 border-b">
                         <tr>
                             <th class="p-2">Item / Jasa</th>
-                            <th class="p-2">Mekanik</th>
-                            <th class="p-2 text-center">Tipe</th>
                             <th class="p-2 text-center">Qty</th>
                             <th class="p-2 text-right">Harga Satuan</th>
                             <th class="p-2 text-right">Subtotal</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <template x-for="(item, idx) in activeDetail?.items || []" :key="idx">
+                        <template x-for="(item, idx) in activeRiwayatDetail?.items || []" :key="idx">
                             <tr class="border-b">
-                                <td class="p-2 font-bold" x-text="item.nama || item.nama_barang"></td>
-                                <td class="p-2 text-blue-600 font-semibold" x-text="item.mekanik || activeDetail?.mekanik || '-'"></td>
-                                <td class="p-2 text-center uppercase text-gray-500" x-text="item.tipe || 'jasa'"></td>
+                                <td class="p-2 font-bold uppercase" x-text="item.nama || item.nama_barang"></td>
                                 <td class="p-2 text-center" x-text="item.qty || 1"></td>
                                 <td class="p-2 text-right" x-text="'Rp ' + Number(item.harga || item.subtotal || 0).toLocaleString()"></td>
                                 <td class="p-2 text-right font-semibold" x-text="'Rp ' + Number((item.harga || item.subtotal || 0) * (item.qty || 1)).toLocaleString()"></td>
                             </tr>
                         </template>
-                        <template x-if="!activeDetail?.items || activeDetail?.items.length === 0">
-                            <tr><td colspan="6" class="p-3 text-center text-gray-400 italic">Tidak ada rincian item</td></tr>
+                        <template x-if="!activeRiwayatDetail?.items || activeRiwayatDetail?.items.length === 0">
+                            <tr><td colspan="4" class="p-3 text-center text-gray-400 italic">Rincian item tidak tersedia di riwayat ini.</td></tr>
                         </template>
                     </tbody>
                 </table>
             </div>
 
-            <!-- Financial Summary -->
-            <div class="bg-blue-50 p-3 rounded border space-y-1 text-xs">
-                <div class="flex justify-between font-bold text-sm text-gray-800">
-                    <span>Total Tagihan:</span>
-                    <span class="text-blue-600 text-base" x-text="'Rp ' + Number(activeDetail?.total_tagihan || 0).toLocaleString()"></span>
-                </div>
-                <template x-if="activeDetail?.bayar > 0">
-                    <div class="flex justify-between text-gray-600">
-                        <span>Jumlah Bayar:</span>
-                        <span class="font-semibold" x-text="'Rp ' + Number(activeDetail?.bayar || 0).toLocaleString()"></span>
-                    </div>
-                </template>
-                <template x-if="activeDetail?.kembalian > 0">
-                    <div class="flex justify-between text-green-700 font-semibold">
-                        <span>Kembalian:</span>
-                        <span x-text="'Rp ' + Number(activeDetail?.kembalian || 0).toLocaleString()"></span>
-                    </div>
-                </template>
+            <div class="bg-blue-50 p-3 rounded border flex justify-between items-center text-sm font-bold">
+                <span class="text-gray-800">Total Tagihan:</span>
+                <span class="text-blue-600 text-base" x-text="'Rp ' + Number(activeRiwayatDetail?.total_tagihan || 0).toLocaleString()"></span>
             </div>
 
-            <div class="flex justify-end gap-2 pt-2 border-t">
-                <button @click="modalDetail = false" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm font-bold">Tutup</button>
+            <div class="flex justify-end pt-2 border-t no-print">
+                <button @click="modalRiwayatDetail = false" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded text-sm font-bold transition">Tutup</button>
             </div>
         </div>
     </div>
 
-    <!-- Modal Struk -->
     <div x-show="modalStruk" class="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-[100]" style="display: none;">
         <div class="bg-white p-6 rounded-lg shadow-2xl w-full max-w-sm space-y-4">
             
@@ -845,15 +810,15 @@
                 riwayatList: [],
                 filterTanggal: '',
 
-                // State Modal Detail Transaksi
-                modalDetail: false,
-                activeDetail: null,
-
                 // State Searchable Dropdown Barang
                 searchBarangQuery: '',
                 showBarangDropdown: false,
                 tlSearchBarangQuery: '',
                 showTLBarangDropdown: false,
+
+                // State Modal Detail Riwayat Ditambahkan
+                modalRiwayatDetail: false,
+                activeRiwayatDetail: null,
 
                 // State Modal Struk Nota
                 modalStruk: false,
@@ -870,34 +835,45 @@
                     status: ''
                 },
 
-                bukaModalDetail(item) {
-                    let itemsList = item.keranjang || item.items || [];
-                    if (typeof itemsList === 'string') {
-                        try { itemsList = JSON.parse(itemsList); } catch(e) { itemsList = []; }
+                // FUNGSI MEMBUKA MODAL RIWAYAT TRANSAKSI DITAMBAHKAN
+                bukaModalRiwayatDetail(r) {
+                    let items = [];
+                    // 1. Coba parse dari r.items atau r.keranjang (jika ke depannya riwayat menyimpan array)
+                    if (r.items) {
+                        try { items = typeof r.items === 'string' ? JSON.parse(r.items) : r.items; } catch(e) {}
+                    } else if (r.keranjang) {
+                        try { items = typeof r.keranjang === 'string' ? JSON.parse(r.keranjang) : r.keranjang; } catch(e) {}
                     }
 
-                    let statusStr = item.status ? String(item.status) : 'Selesai';
-                    let platStr = item.plat_nomor || '-';
-                    let jenisStr = item.jenis_motor || '';
-                    let pelangganName = item.nama_pelanggan || '';
-                    
-                    let pelangganFull = pelangganName ? (pelangganName + (platStr !== '-' ? ' (' + platStr + ')' : '')) : (platStr + (jenisStr ? ' - ' + jenisStr : ''));
+                    // 2. Fallback: Cari rincian item di daftar Antrian List
+                    if (items.length === 0) {
+                        let antrian = this.antrianList.find(a => a.no_antrian === r.no_transaksi);
+                        if (antrian && antrian.keranjang) {
+                             items = typeof antrian.keranjang === 'string' ? JSON.parse(antrian.keranjang) : antrian.keranjang;
+                        }
+                    }
 
-                    this.activeDetail = {
-                        no_transaksi: item.no_transaksi || item.no_antrian || item.id || '-',
-                        tanggal: item.created_at ? item.created_at.split('T')[0] : (item.tanggal || this.currentDate),
-                        pelanggan: pelangganFull || '-',
-                        plat_nomor: platStr,
-                        jenis_motor: jenisStr,
-                        mekanik: item.mekanik || '-',
-                        status: statusStr,
-                        metode: item.metode_pembayaran || item.metode || 'Tunai',
-                        total_tagihan: Number(item.total_tagihan || 0),
-                        bayar: Number(item.bayar || 0),
-                        kembalian: Number(item.kembalian || 0),
-                        items: Array.isArray(itemsList) ? itemsList : []
+                    // 3. Fallback: Cari rincian item di daftar Transaksi Langsung List
+                    if (items.length === 0) {
+                         let tl = this.transaksiLangsungList.find(t => t.no_transaksi === r.no_transaksi);
+                         if (tl) {
+                             let tlItems = tl.items || tl.keranjang;
+                             if (tlItems) {
+                                 items = typeof tlItems === 'string' ? JSON.parse(tlItems) : tlItems;
+                             }
+                         }
+                    }
+
+                    this.activeRiwayatDetail = {
+                        no_transaksi: r.no_transaksi || r.id,
+                        tanggal: r.created_at ? r.created_at.split('T')[0] : '-',
+                        pelanggan: r.nama_pelanggan || r.plat_nomor || '-',
+                        mekanik: r.mekanik || '-',
+                        total_tagihan: Number(r.total_tagihan || 0),
+                        status: r.status || 'Selesai',
+                        items: items
                     };
-                    this.modalDetail = true;
+                    this.modalRiwayatDetail = true;
                 },
 
                 get filteredBarangList() {
@@ -1225,7 +1201,7 @@
                         await this.loadMasterData();
                     } catch (err) {
                         alert('Terjadi kesalahan sistem: ' + err.message);
-                    } fontally {
+                    } finally {
                         this.isSubmitting = false;
                     }
                 },
