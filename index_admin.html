@@ -339,7 +339,15 @@
                                     <template x-for="t in filteredRiwayatList" :key="t.uniqueId">
                                         <tr class="border-b hover:bg-gray-50">
                                             <td class="p-2" x-text="t.tanggal"></td>
-                                            <td class="p-2 font-semibold" :class="t.tipe === 'Kasir' ? 'text-blue-600' : 'text-purple-600'" x-text="t.tipe"></td>
+                                            <td class="p-2 font-semibold" 
+                                                :class="{
+                                                    'text-blue-600': t.tipe === 'Kasir',
+                                                    'text-purple-600': t.tipe.includes('Restock'),
+                                                    'text-orange-600': t.tipe.includes('Pengeluaran'),
+                                                    'text-green-600': t.tipe === 'Gaji Mekanik'
+                                                }" 
+                                                x-text="t.tipe">
+                                            </td>
                                             <td class="p-2" x-text="t.keterangan"></td>
                                             <td class="p-2" x-text="t.jumlah"></td>
                                             <td class="p-2 font-bold" x-text="'Rp ' + Number(t.total || 0).toLocaleString()"></td>
@@ -759,7 +767,7 @@
                     }
                 },
 
-                // --- RIWAYAT TRANSAKSI GABUNGAN & FILTER ---
+                // --- RIWAYAT TRANSAKSI GABUNGAN & FILTER (SEMUA JENIS TRANSAKSI) ---
                 get gabunganRiwayatList() {
                     let listKasirAntrian = this.antrianList.filter(a => a.status && a.status.toLowerCase().includes('selesai')).map(t => ({
                         uniqueId: 'antrian-' + t.id,
@@ -785,7 +793,23 @@
                         status: p.metode_pembayaran === 'Tempo' ? 'Hutang' : 'Lunas'
                     }));
 
-                    return [...listKasirAntrian, ...listPembelian].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+                    let listPengeluaran = this.pengeluaranList.map(p => {
+                        let kat = p.kategori || 'Operasional';
+                        let tipeNama = kat === 'Gaji Mekanik' ? 'Gaji Mekanik' : 'Pengeluaran (' + kat + ')';
+                        return {
+                            uniqueId: 'pengeluaran-' + (p.id || p.id_pengeluaran),
+                            originalId: p.id || p.id_pengeluaran,
+                            source: 'pengeluaran',
+                            tanggal: p.tanggal || (p.created_at ? p.created_at.split('T')[0] : '-'),
+                            tipe: tipeNama,
+                            keterangan: p.keterangan || '-',
+                            jumlah: 1,
+                            total: Number(p.nominal || p.jumlah || 0),
+                            status: 'Lunas'
+                        };
+                    });
+
+                    return [...listKasirAntrian, ...listPembelian, ...listPengeluaran].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
                 },
 
                 get filteredRiwayatList() {
@@ -795,15 +819,22 @@
 
                 async hapusSatuRiwayat(item) {
                     if(confirm("Yakin ingin menghapus transaksi ini?")) {
-                        const tableTarget = item.source === 'antrian' ? 'antrian' : 'pembelian';
-                        const { error } = await _supabase.from(tableTarget).delete().eq('id', item.originalId);
+                        let tableTarget = item.source === 'antrian' ? 'antrian' : (item.source === 'pembelian' ? 'pembelian' : 'pengeluaran');
+                        let queryVal = item.originalId;
+
+                        let { error } = await _supabase.from(tableTarget).delete().eq('id', queryVal);
+                        if(error && item.source === 'pengeluaran') {
+                            let retry = await _supabase.from('pengeluaran').delete().eq('id_pengeluaran', queryVal);
+                            error = retry.error;
+                        }
+
                         if(error) alert('Gagal menghapus: ' + error.message);
                         else await this.loadData();
                     }
                 },
 
                 async hapusSemuaRiwayat() {
-                    if(confirm("PERINGATAN: Yakin ingin menghapus seluruh riwayat transaksi (kasir dan pembelian)?")) {
+                    if(confirm("PERINGATAN: Yakin ingin menghapus seluruh riwayat transaksi (kasir, pembelian, dan pengeluaran)?")) {
                         for(let a of this.antrianList) {
                              if(a.status && a.status.toLowerCase().includes('selesai')){
                                  await _supabase.from('antrian').delete().eq('id', a.id);
@@ -811,6 +842,12 @@
                         }
                         for(let p of this.pembelianList) {
                             await _supabase.from('pembelian').delete().eq('id', p.id);
+                        }
+                        for(let ex of this.pengeluaranList) {
+                            await _supabase.from('pengeluaran').delete().eq('id', ex.id);
+                            if(ex.id_pengeluaran) {
+                                await _supabase.from('pengeluaran').delete().eq('id_pengeluaran', ex.id_pengeluaran);
+                            }
                         }
                         alert('Semua riwayat berhasil dihapus.');
                         await this.loadData();
