@@ -7,7 +7,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        [x-cloak] { 
+            display: none !important; 
+        }
         @media print {
             aside, header, .no-print {
                 display: none !important;
@@ -25,45 +32,115 @@
         }
     </style>
 </head>
-<body class="bg-gray-100 font-sans" x-data="bengkelApp()" x-init="initApp()">
+<body class="bg-slate-50 text-slate-800 antialiased selection:bg-indigo-500 selection:text-white" x-data="bengkelApp()" x-init="initApp()">
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div aria-live="assertive" class="fixed inset-0 flex items-end px-4 py-6 pointer-events-none sm:p-6 z-50 justify-end">
+        <div class="w-full flex flex-col items-end space-y-4">
+            <template x-if="toast.show">
+                <div class="max-w-sm w-full bg-white shadow-xl rounded-2xl pointer-events-auto ring-1 ring-black ring-opacity-5 overflow-hidden transition-all duration-300 transform translate-y-0"
+                     :class="toast.type === 'error' ? 'border-l-4 border-rose-500' : 'border-l-4 border-emerald-500'">
+                    <div class="p-4 flex items-center">
+                        <div class="flex-shrink-0 mr-3">
+                            <span x-show="toast.type === 'success'" class="text-2xl">✅</span>
+                            <span x-show="toast.type === 'error'" class="text-2xl">⚠️</span>
+                        </div>
+                        <div class="flex-1 w-0">
+                            <p class="text-sm font-bold text-slate-900" x-text="toast.type === 'error' ? 'Perhatian' : 'Berhasil'"></p>
+                            <p class="text-xs text-slate-600 mt-0.5" x-text="toast.message"></p>
+                        </div>
+                        <div class="ml-4 flex-shrink-0 flex">
+                            <button @click="toast.show = false" class="bg-white rounded-md inline-text text-slate-400 hover:text-slate-500 focus:outline-none">
+                                <span class="sr-only">Tutup</span>
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
 
     <div class="min-h-screen flex flex-col">
-        <header class="bg-blue-600 text-white shadow-md p-4 flex justify-between items-center no-print">
+        <!-- HEADER -->
+        <header class="bg-gradient-to-r from-blue-700 via-indigo-600 to-indigo-800 text-white shadow-lg px-6 py-4 flex justify-between items-center no-print sticky top-0 z-30">
             <div class="flex items-center gap-3">
-                <h1 class="text-lg font-bold">🛠️ Sistem Bengkel Pintar - Admin</h1>
-                <span class="bg-blue-500 text-xs px-2 py-1 rounded uppercase font-semibold" x-text="'Role: ' + userRole"></span>
+                <div class="bg-white/10 p-2 rounded-xl backdrop-blur-md">
+                    <span class="text-xl">🛠️</span>
+                </div>
+                <div>
+                    <h1 class="text-lg font-extrabold tracking-tight">Sistem Bengkel Pintar</h1>
+                    <p class="text-xs text-indigo-200">Panel Administrasi & Manajemen Keuangan</p>
+                </div>
+                <span class="ml-3 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs px-3 py-1 rounded-full uppercase font-bold tracking-wider" x-text="'Role: ' + userRole"></span>
             </div>
         </header>
 
         <div class="flex flex-1 flex-col md:flex-row">
-            <aside class="w-full md:w-64 bg-white shadow-md p-4 space-y-2 no-print">
-                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Menu Admin</p>
-                <button @click="adminTab = 'barang'" :class="adminTab === 'barang' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">📦 Master Barang</button>
-                <button @click="adminTab = 'pembelian'" :class="adminTab === 'pembelian' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">📦 Barang Masuk (Restock)</button>
-                <button @click="adminTab = 'master_lain'" :class="adminTab === 'master_lain' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">⚙️ Mekanik, Jasa & Supplier</button>
-                <button @click="adminTab = 'pengeluaran'" :class="adminTab === 'pengeluaran' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">💸 Input Pengeluaran</button>
-                <button @click="adminTab = 'riwayat'" :class="adminTab === 'riwayat' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">📜 Riwayat Transaksi</button>
-                <button @click="adminTab = 'laporan'" :class="adminTab === 'laporan' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">📊 Laporan Keuangan</button>
+            <!-- SIDEBAR -->
+            <aside class="w-full md:w-72 bg-white border-r border-slate-200/80 p-5 space-y-2 no-print shadow-sm">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest px-3 mb-3">Menu Admin</p>
+                
+                <button @click="adminTab = 'barang'" 
+                        :class="adminTab === 'barang' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'hover:bg-slate-100 text-slate-600'" 
+                        class="w-full flex items-center gap-3 text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200">
+                    <span>📦</span> Master Barang
+                </button>
+                <button @click="adminTab = 'pembelian'" 
+                        :class="adminTab === 'pembelian' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'hover:bg-slate-100 text-slate-600'" 
+                        class="w-full flex items-center gap-3 text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200">
+                    <span>📥</span> Barang Masuk (Restock)
+                </button>
+                <button @click="adminTab = 'master_lain'" 
+                        :class="adminTab === 'master_lain' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'hover:bg-slate-100 text-slate-600'" 
+                        class="w-full flex items-center gap-3 text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200">
+                    <span>⚙️</span> Mekanik, Jasa & Supplier
+                </button>
+                <button @click="adminTab = 'pengeluaran'" 
+                        :class="adminTab === 'pengeluaran' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'hover:bg-slate-100 text-slate-600'" 
+                        class="w-full flex items-center gap-3 text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200">
+                    <span>💸</span> Input Pengeluaran
+                </button>
+                <button @click="adminTab = 'riwayat'" 
+                        :class="adminTab === 'riwayat' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'hover:bg-slate-100 text-slate-600'" 
+                        class="w-full flex items-center gap-3 text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200">
+                    <span>📜</span> Riwayat Transaksi
+                </button>
+                <button @click="adminTab = 'laporan'" 
+                        :class="adminTab === 'laporan' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200' : 'hover:bg-slate-100 text-slate-600'" 
+                        class="w-full flex items-center gap-3 text-left px-4 py-3 rounded-xl text-sm font-semibold transition-all duration-200">
+                    <span>📊</span> Laporan Keuangan
+                </button>
             </aside>
 
-            <main class="flex-1 p-6 overflow-y-auto">
+            <!-- MAIN CONTENT -->
+            <main class="flex-1 p-6 md:p-8 overflow-y-auto max-w-7xl mx-auto w-full">
                 
-                <div x-show="userRole === 'admin' && adminTab === 'barang'" class="space-y-6">
-                    <h2 class="text-xl font-bold text-gray-800">Manajemen Stok Barang & Sparepart</h2>
-                    <div class="bg-white p-5 rounded-lg shadow space-y-4">
-                        <h3 class="font-semibold text-gray-700 border-b pb-2">Form Input Stok Data Barang</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                <!-- TAB 1: MASTER BARANG -->
+                <div x-show="userRole === 'admin' && adminTab === 'barang'" class="space-y-6" x-cloak>
+                    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-black text-slate-900 tracking-tight">Manajemen Stok Barang & Sparepart</h2>
+                            <p class="text-sm text-slate-500">Kelola inventaris suku cadang dan harga jual dengan mudah.</p>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 space-y-5">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h3 class="font-bold text-slate-800 flex items-center gap-2"><span>📝</span> Form Input Stok Data Barang</h3>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 text-sm">
                             <div>
-                                <label class="block text-gray-600 mb-1">Kode Barang</label>
-                                <input type="text" x-model="formBarang.kode_barang" readonly class="border p-2 rounded w-full bg-gray-100 font-bold">
+                                <label class="block text-slate-600 font-semibold mb-1.5">Kode Barang</label>
+                                <input type="text" x-model="formBarang.kode_barang" readonly class="border border-slate-200 p-3 rounded-xl w-full bg-slate-50 font-mono font-bold text-slate-700">
                             </div>
                             <div>
-                                <label class="block text-gray-600 mb-1">Nama Barang</label>
-                                <input type="text" x-model="formBarang.nama_barang" placeholder="Nama Barang" class="border p-2 rounded w-full">
+                                <label class="block text-slate-600 font-semibold mb-1.5">Nama Barang</label>
+                                <input type="text" x-model="formBarang.nama_barang" placeholder="Masukkan nama barang..." class="border border-slate-200 p-3 rounded-xl w-full focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
                             </div>
                             <div>
-                                <label class="block text-gray-600 mb-1">Supplier</label>
-                                <select x-model="formBarang.supplier" class="border p-2 rounded w-full">
+                                <label class="block text-slate-600 font-semibold mb-1.5">Supplier</label>
+                                <select x-model="formBarang.supplier" class="border border-slate-200 p-3 rounded-xl w-full bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
                                     <option value="">-- Pilih Supplier --</option>
                                     <template x-for="s in supplierList" :key="s.id">
                                         <option :value="s.nama || s.nama_supplier" x-text="s.nama || s.nama_supplier"></option>
@@ -71,66 +148,74 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-gray-600 mb-1">Harga Beli</label>
-                                <input type="number" x-model="formBarang.harga_beli" class="border p-2 rounded w-full">
+                                <label class="block text-slate-600 font-semibold mb-1.5">Harga Beli</label>
+                                <input type="number" x-model="formBarang.harga_beli" placeholder="0" class="border border-slate-200 p-3 rounded-xl w-full focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
                             </div>
                             <div>
-                                <label class="block text-gray-600 mb-1">Harga Jual</label>
-                                <input type="number" x-model="formBarang.harga_jual" class="border p-2 rounded w-full">
+                                <label class="block text-slate-600 font-semibold mb-1.5">Harga Jual</label>
+                                <input type="number" x-model="formBarang.harga_jual" placeholder="0" class="border border-slate-200 p-3 rounded-xl w-full focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
                             </div>
                             <div>
-                                <label class="block text-gray-600 mb-1">Stok Awal</label>
-                                <input type="number" x-model="formBarang.stok" class="border p-2 rounded w-full">
+                                <label class="block text-slate-600 font-semibold mb-1.5">Stok Awal</label>
+                                <input type="number" x-model="formBarang.stok" placeholder="0" class="border border-slate-200 p-3 rounded-xl w-full focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
                             </div>
                         </div>
-                        <div class="flex flex-wrap items-center gap-2 pt-2">
-                            <button @click="simpanBarang()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-blue-700">Simpan Data</button>
-                            <button @click="downloadTemplateCSV()" class="bg-emerald-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-emerald-700">📥 Download Template CSV</button>
-                            <label class="bg-indigo-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-indigo-700 cursor-pointer inline-block">
+                        <div class="flex flex-wrap items-center gap-3 pt-3">
+                            <button @click="simpanBarang()" class="bg-indigo-600 text-white px-5 py-3 rounded-xl text-sm font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition">Simpan Data</button>
+                            <button @click="downloadTemplateCSV()" class="bg-emerald-600 text-white px-5 py-3 rounded-xl text-sm font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition">📥 Download Template CSV</button>
+                            <label class="bg-violet-600 text-white px-5 py-3 rounded-xl text-sm font-bold hover:bg-violet-700 shadow-lg shadow-violet-200 transition cursor-pointer inline-flex items-center gap-2">
                                 📤 Import CSV
                                 <input type="file" accept=".csv" class="hidden" @change="importCSV($event)">
                             </label>
                         </div>
                     </div>
                     
-                    <div class="bg-white p-5 rounded-lg shadow">
-                        <h3 class="font-semibold text-gray-700 mb-3">Daftar Stok Barang</h3>
-                        <table class="w-full text-left text-sm border-collapse">
-                            <thead>
-                                <tr class="bg-gray-100 border-b">
-                                    <th class="p-2">Kode</th>
-                                    <th class="p-2">Nama Barang</th>
-                                    <th class="p-2">Supplier</th>
-                                    <th class="p-2">Harga Beli</th>
-                                    <th class="p-2">Harga Jual</th>
-                                    <th class="p-2">Stok</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-for="b in barangList" :key="b.id">
-                                    <tr class="border-b">
-                                        <td class="p-2 font-mono font-bold" x-text="b.kode_barang"></td>
-                                        <td class="p-2" x-text="b.nama_barang || b.nama"></td>
-                                        <td class="p-2" x-text="b.supplier || '-'"></td>
-                                        <td class="p-2" x-text="'Rp ' + Number(b.harga_beli || 0).toLocaleString()"></td>
-                                        <td class="p-2" x-text="'Rp ' + Number(b.harga_jual || 0).toLocaleString()"></td>
-                                        <td class="p-2 font-bold" x-text="b.stok"></td>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+                        <h3 class="font-bold text-slate-800">Daftar Stok Barang</h3>
+                        <div class="overflow-x-auto rounded-xl border border-slate-100">
+                            <table class="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-xs tracking-wider font-bold">
+                                        <th class="p-3.5">Kode</th>
+                                        <th class="p-3.5">Nama Barang</th>
+                                        <th class="p-3.5">Supplier</th>
+                                        <th class="p-3.5">Harga Beli</th>
+                                        <th class="p-3.5">Harga Jual</th>
+                                        <th class="p-3.5">Stok</th>
                                     </tr>
-                                </template>
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    <template x-for="b in barangList" :key="b.id">
+                                        <tr class="hover:bg-slate-50/80 transition">
+                                            <td class="p-3.5 font-mono font-bold text-indigo-600" x-text="b.kode_barang"></td>
+                                            <td class="p-3.5 font-medium text-slate-800" x-text="b.nama_barang || b.nama"></td>
+                                            <td class="p-3.5 text-slate-600" x-text="b.supplier || '-'"></td>
+                                            <td class="p-3.5 text-slate-600" x-text="'Rp ' + Number(b.harga_beli || 0).toLocaleString()"></td>
+                                            <td class="p-3.5 text-slate-600 font-semibold" x-text="'Rp ' + Number(b.harga_jual || 0).toLocaleString()"></td>
+                                            <td class="p-3.5 font-bold">
+                                                <span class="px-2.5 py-1 rounded-lg text-xs" :class="b.stok > 5 ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'" x-text="b.stok"></span>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <div x-show="userRole === 'admin' && adminTab === 'pembelian'" class="space-y-6">
-                    <h2 class="text-xl font-bold text-gray-800">Manajemen Barang Masuk (Restock)</h2>
+                <!-- TAB 2: PEMBELIAN / RESTOCK -->
+                <div x-show="userRole === 'admin' && adminTab === 'pembelian'" class="space-y-6" x-cloak>
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-900 tracking-tight">Manajemen Barang Masuk (Restock)</h2>
+                        <p class="text-sm text-slate-500">Catat pembelian stok barang dari supplier secara tunai maupun tempo.</p>
+                    </div>
                     
-                    <div class="bg-white p-5 rounded-lg shadow space-y-4">
-                        <h3 class="font-semibold text-gray-700 border-b pb-2">Form Input Barang Masuk</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+                        <h3 class="font-bold text-slate-800 border-b border-slate-100 pb-3">Form Input Barang Masuk</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                             <div>
-                                <label class="block text-gray-600 mb-1">Pilih Barang</label>
-                                <select x-model="formRestock.kode_barang" class="border p-2 rounded w-full">
+                                <label class="block text-slate-600 font-semibold mb-1.5">Pilih Barang</label>
+                                <select x-model="formRestock.kode_barang" class="border border-slate-200 p-3 rounded-xl w-full bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
                                     <option value="">-- Pilih Barang --</option>
                                     <template x-for="b in barangList" :key="b.id">
                                         <option :value="b.kode_barang" x-text="b.kode_barang + ' - ' + (b.nama_barang || b.nama)"></option>
@@ -138,64 +223,64 @@
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-gray-600 mb-1">Metode Pembayaran</label>
-                                <select x-model="formRestock.metode_pembayaran" class="border p-2 rounded w-full">
+                                <label class="block text-slate-600 font-semibold mb-1.5">Metode Pembayaran</label>
+                                <select x-model="formRestock.metode_pembayaran" class="border border-slate-200 p-3 rounded-xl w-full bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
                                     <option value="Tunai">Tunai</option>
                                     <option value="Tempo">Tempo</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-gray-600 mb-1">Jumlah Masuk</label>
-                                <input type="number" x-model="formRestock.jumlah" placeholder="Contoh: 10" class="border p-2 rounded w-full">
+                                <label class="block text-slate-600 font-semibold mb-1.5">Jumlah Masuk</label>
+                                <input type="number" x-model="formRestock.jumlah" placeholder="Contoh: 10" class="border border-slate-200 p-3 rounded-xl w-full focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
                             </div>
                             <div>
-                                <label class="block text-gray-600 mb-1">Harga Beli Satuan (Rp)</label>
-                                <input type="number" x-model="formRestock.harga_beli" placeholder="Contoh: 50000" class="border p-2 rounded w-full">
+                                <label class="block text-slate-600 font-semibold mb-1.5">Harga Beli Satuan (Rp)</label>
+                                <input type="number" x-model="formRestock.harga_beli" placeholder="Contoh: 50000" class="border border-slate-200 p-3 rounded-xl w-full focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
                             </div>
                             <div x-show="formRestock.metode_pembayaran === 'Tempo'" class="md:col-span-2">
-                                <label class="block text-gray-600 mb-1">Tanggal Jatuh Tempo</label>
-                                <input type="date" x-model="formRestock.tanggal_jatuh_tempo" class="border p-2 rounded w-full">
+                                <label class="block text-slate-600 font-semibold mb-1.5">Tanggal Jatuh Tempo</label>
+                                <input type="date" x-model="formRestock.tanggal_jatuh_tempo" class="border border-slate-200 p-3 rounded-xl w-full focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
                             </div>
                         </div>
-                        <button @click="simpanRestock()" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-green-700 transition">Proses Barang Masuk</button>
+                        <button @click="simpanRestock()" class="bg-emerald-600 text-white px-5 py-3 rounded-xl text-sm font-bold hover:bg-emerald-700 shadow-lg shadow-emerald-200 transition">Proses Barang Masuk</button>
                     </div>
 
-                    <div class="bg-white p-5 rounded-lg shadow space-y-3">
-                        <h3 class="font-semibold text-gray-700 border-b pb-2">Daftar Input Barang Masuk</h3>
-                        <div class="overflow-x-auto">
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+                        <h3 class="font-bold text-slate-800 border-b border-slate-100 pb-3">Daftar Input Barang Masuk</h3>
+                        <div class="overflow-x-auto rounded-xl border border-slate-100">
                             <table class="w-full text-left text-sm border-collapse">
                                 <thead>
-                                    <tr class="bg-gray-100 border-b text-gray-600">
-                                        <th class="p-2">Tanggal</th>
-                                        <th class="p-2">Kode / Barang</th>
-                                        <th class="p-2">Supplier</th>
-                                        <th class="p-2">Jumlah</th>
-                                        <th class="p-2">Total Bayar</th>
-                                        <th class="p-2">Metode</th>
-                                        <th class="p-2">Jatuh Tempo</th>
-                                        <th class="p-2">Status</th>
-                                        <th class="p-2 text-center">Aksi</th>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-xs tracking-wider font-bold">
+                                        <th class="p-3.5">Tanggal</th>
+                                        <th class="p-3.5">Kode / Barang</th>
+                                        <th class="p-3.5">Supplier</th>
+                                        <th class="p-3.5">Jumlah</th>
+                                        <th class="p-3.5">Total Bayar</th>
+                                        <th class="p-3.5">Metode</th>
+                                        <th class="p-3.5">Jatuh Tempo</th>
+                                        <th class="p-3.5">Status</th>
+                                        <th class="p-3.5 text-center">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody class="divide-y divide-slate-100">
                                     <template x-for="item in pembelianList" :key="item.id">
-                                        <tr class="border-b hover:bg-gray-50">
-                                            <td class="p-2" x-text="item.created_at ? item.created_at.split('T')[0] : '-' "></td>
-                                            <td class="p-2 font-mono font-bold" x-text="item.kode_barang"></td>
-                                            <td class="p-2" x-text="item.supplier || '-' "></td>
-                                            <td class="p-2" x-text="item.jumlah"></td>
-                                            <td class="p-2" x-text="'Rp ' + Number(item.total_bayar || 0).toLocaleString()"></td>
-                                            <td class="p-2" x-text="item.metode_pembayaran"></td>
-                                            <td class="p-2" x-text="item.tanggal_jatuh_tempo || '-' "></td>
-                                            <td class="p-2">
-                                                <span class="px-2 py-1 rounded text-xs font-bold"
-                                                      :class="item.metode_pembayaran === 'Tempo' ? 'bg-red-100 text-red-600' : 'bg-green-100 text-green-600'"
+                                        <tr class="hover:bg-slate-50/80 transition">
+                                            <td class="p-3.5 text-slate-600" x-text="item.created_at ? item.created_at.split('T')[0] : '-' "></td>
+                                            <td class="p-3.5 font-mono font-bold text-indigo-600" x-text="item.kode_barang"></td>
+                                            <td class="p-3.5 text-slate-600" x-text="item.supplier || '-' "></td>
+                                            <td class="p-3.5 text-slate-600 font-semibold" x-text="item.jumlah"></td>
+                                            <td class="p-3.5 text-slate-800 font-bold" x-text="'Rp ' + Number(item.total_bayar || 0).toLocaleString()"></td>
+                                            <td class="p-3.5 text-slate-600" x-text="item.metode_pembayaran"></td>
+                                            <td class="p-3.5 text-slate-600" x-text="item.tanggal_jatuh_tempo || '-' "></td>
+                                            <td class="p-3.5">
+                                                <span class="px-2.5 py-1 rounded-lg text-xs font-bold"
+                                                      :class="item.metode_pembayaran === 'Tempo' ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'"
                                                       x-text="item.metode_pembayaran === 'Tempo' ? 'Hutang' : 'Lunas'">
                                                 </span>
                                             </td>
-                                            <td class="p-2 text-center space-x-1">
-                                                <button @click="editPembelian(item)" class="bg-yellow-500 text-white px-2 py-1 rounded text-xs hover:bg-yellow-600">Edit</button>
-                                                <button x-show="item.metode_pembayaran === 'Tempo'" @click="bayarHutang(item)" class="bg-blue-600 text-white px-2 py-1 rounded text-xs hover:bg-blue-700">Bayar</button>
+                                            <td class="p-3.5 text-center space-x-2">
+                                                <button @click="editPembelian(item)" class="bg-amber-500 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-amber-600 transition shadow-sm">Edit</button>
+                                                <button x-show="item.metode_pembayaran === 'Tempo'" @click="bayarHutang(item)" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-indigo-700 transition shadow-sm">Bayar</button>
                                             </td>
                                         </tr>
                                     </template>
@@ -205,63 +290,70 @@
                     </div>
                 </div>
 
-                <div x-show="userRole === 'admin' && adminTab === 'master_lain'" class="space-y-6">
-                    <h2 class="text-xl font-bold text-gray-800">Master Data: Mekanik, Jasa & Supplier</h2>
+                <!-- TAB 3: MASTER LAIN (MEKANIK, JASA, SUPPLIER) -->
+                <div x-show="userRole === 'admin' && adminTab === 'master_lain'" class="space-y-6" x-cloak>
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-900 tracking-tight">Master Data: Mekanik, Jasa & Supplier</h2>
+                        <p class="text-sm text-slate-500">Kelola informasi SDM dan rekanan kerja bengkel.</p>
+                    </div>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div class="bg-white p-5 rounded-lg shadow space-y-3">
-                            <h3 class="font-semibold text-gray-700 border-b pb-2" x-text="editMekanikId ? 'Edit Mekanik' : 'Input Mekanik'"></h3>
-                            <input type="text" x-model="inputMekanikNama" placeholder="Nama Mekanik" class="border p-2 rounded w-full text-sm">
+                        <!-- Mekanik -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 space-y-4 flex flex-col">
+                            <h3 class="font-bold text-slate-800 border-b border-slate-100 pb-3" x-text="editMekanikId ? 'Edit Mekanik' : 'Input Mekanik'"></h3>
+                            <input type="text" x-model="inputMekanikNama" placeholder="Nama Mekanik" class="border border-slate-200 p-3 rounded-xl w-full text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
                             <div class="flex gap-2">
-                                <button @click="simpanMekanik()" class="flex-1 bg-blue-600 text-white py-2 rounded text-sm font-bold" x-text="editMekanikId ? 'Update' : 'Simpan Mekanik'"></button>
-                                <button x-show="editMekanikId" @click="batalEditMekanik()" class="bg-gray-400 text-white px-3 py-2 rounded text-sm font-bold">Batal</button>
+                                <button @click="simpanMekanik()" class="flex-1 bg-indigo-600 text-white py-2.5 rounded-xl text-sm font-bold shadow-md shadow-indigo-200 hover:bg-indigo-700 transition" x-text="editMekanikId ? 'Update' : 'Simpan Mekanik'"></button>
+                                <button x-show="editMekanikId" @click="batalEditMekanik()" class="bg-slate-400 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-500 transition">Batal</button>
                             </div>
-                            <ul class="space-y-2 text-sm pt-2 max-h-48 overflow-y-auto">
+                            <ul class="space-y-2 text-sm pt-2 max-h-56 overflow-y-auto divide-y divide-slate-100 flex-1">
                                 <template x-for="m in mekanikList" :key="m.id">
-                                    <li class="bg-gray-50 p-2 rounded flex justify-between items-center">
-                                        <span x-text="m.nama || m.nama_mekanik"></span>
+                                    <li class="bg-slate-50/50 p-3 rounded-xl flex justify-between items-center hover:bg-slate-50 transition">
+                                        <span class="font-semibold text-slate-700" x-text="m.nama || m.nama_mekanik"></span>
                                         <div class="space-x-1">
-                                            <button @click="pilihEditMekanik(m)" class="bg-yellow-500 text-white px-2 py-1 rounded text-xs">Edit</button>
-                                            <button @click="hapusMekanik(m.id)" class="bg-red-500 text-white px-2 py-1 rounded text-xs">Hapus</button>
+                                            <button @click="pilihEditMekanik(m)" class="bg-amber-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold hover:bg-amber-600 transition">Edit</button>
+                                            <button @click="hapusMekanik(m.id)" class="bg-rose-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold hover:bg-rose-600 transition">Hapus</button>
                                         </div>
                                     </li>
                                 </template>
                             </ul>
                         </div>
-                        <div class="bg-white p-5 rounded-lg shadow space-y-3">
-                            <h3 class="font-semibold text-gray-700 border-b pb-2" x-text="editJasaId ? 'Edit Jasa Servis' : 'Input Jasa Servis'"></h3>
-                            <input type="text" x-model="inputJasaNama" placeholder="Nama Jasa" class="border p-2 rounded w-full text-sm">
+                        <!-- Jasa -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 space-y-4 flex flex-col">
+                            <h3 class="font-bold text-slate-800 border-b border-slate-100 pb-3" x-text="editJasaId ? 'Edit Jasa Servis' : 'Input Jasa Servis'"></h3>
+                            <input type="text" x-model="inputJasaNama" placeholder="Nama Jasa" class="border border-slate-200 p-3 rounded-xl w-full text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
                             <div class="flex gap-2">
-                                <button @click="simpanJasa()" class="flex-1 bg-blue-600 text-white py-2 rounded text-sm font-bold" x-text="editJasaId ? 'Update' : 'Simpan Jasa'"></button>
-                                <button x-show="editJasaId" @click="batalEditJasa()" class="bg-gray-400 text-white px-3 py-2 rounded text-sm font-bold">Batal</button>
+                                <button @click="simpanJasa()" class="flex-1 bg-indigo-600 text-white py-2.5 rounded-xl text-sm font-bold shadow-md shadow-indigo-200 hover:bg-indigo-700 transition" x-text="editJasaId ? 'Update' : 'Simpan Jasa'"></button>
+                                <button x-show="editJasaId" @click="batalEditJasa()" class="bg-slate-400 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-500 transition">Batal</button>
                             </div>
-                            <ul class="space-y-2 text-sm pt-2 max-h-48 overflow-y-auto">
+                            <ul class="space-y-2 text-sm pt-2 max-h-56 overflow-y-auto divide-y divide-slate-100 flex-1">
                                 <template x-for="j in jasaList" :key="j.id">
-                                    <li class="bg-gray-50 p-2 rounded flex justify-between items-center">
-                                        <span x-text="j.nama_jasa || j.nama"></span>
+                                    <li class="bg-slate-50/50 p-3 rounded-xl flex justify-between items-center hover:bg-slate-50 transition">
+                                        <span class="font-semibold text-slate-700" x-text="j.nama_jasa || j.nama"></span>
                                         <div class="space-x-1">
-                                            <button @click="pilihEditJasa(j)" class="bg-yellow-500 text-white px-2 py-1 rounded text-xs">Edit</button>
-                                            <button @click="hapusJasa(j.id)" class="bg-red-500 text-white px-2 py-1 rounded text-xs">Hapus</button>
+                                            <button @click="pilihEditJasa(j)" class="bg-amber-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold hover:bg-amber-600 transition">Edit</button>
+                                            <button @click="hapusJasa(j.id)" class="bg-rose-500 text-white px-2.5 py-1 rounded-lg text-xs font-bold hover:bg-rose-600 transition">Hapus</button>
                                         </div>
                                     </li>
                                 </template>
                             </ul>
                         </div>
-                        <div class="bg-white p-5 rounded-lg shadow space-y-3">
-                            <h3 class="font-semibold text-gray-700 border-b pb-2" x-text="editSupplierId ? 'Edit Supplier' : 'Input Supplier'"></h3>
-                            <input type="text" x-model="formSupplier.nama" placeholder="Nama Supplier" class="border p-2 rounded w-full text-sm">
-                            <input type="text" x-model="formSupplier.alamat" placeholder="Alamat" class="border p-2 rounded w-full text-sm">
-                            <input type="text" x-model="formSupplier.telp" placeholder="No Telp" class="border p-2 rounded w-full text-sm">
-                            <div class="flex gap-2">
-                                <button @click="simpanSupplier()" class="flex-1 bg-blue-600 text-white py-2 rounded text-sm font-bold" x-text="editSupplierId ? 'Update' : 'Simpan Supplier'"></button>
-                                <button x-show="editSupplierId" @click="batalEditSupplier()" class="bg-gray-400 text-white px-3 py-2 rounded text-sm font-bold">Batal</button>
+                        <!-- Supplier -->
+                        <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 space-y-3 flex flex-col">
+                            <h3 class="font-bold text-slate-800 border-b border-slate-100 pb-3" x-text="editSupplierId ? 'Edit Supplier' : 'Input Supplier'"></h3>
+                            <input type="text" x-model="formSupplier.nama" placeholder="Nama Supplier" class="border border-slate-200 p-3 rounded-xl w-full text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                            <input type="text" x-model="formSupplier.alamat" placeholder="Alamat" class="border border-slate-200 p-3 rounded-xl w-full text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                            <input type="text" x-model="formSupplier.telp" placeholder="No Telp" class="border border-slate-200 p-3 rounded-xl w-full text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                            <div class="flex gap-2 pt-1">
+                                <button @click="simpanSupplier()" class="flex-1 bg-indigo-600 text-white py-2.5 rounded-xl text-sm font-bold shadow-md shadow-indigo-200 hover:bg-indigo-700 transition" x-text="editSupplierId ? 'Update' : 'Simpan Supplier'"></button>
+                                <button x-show="editSupplierId" @click="batalEditSupplier()" class="bg-slate-400 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-500 transition">Batal</button>
                             </div>
-                            <ul class="space-y-2 text-sm pt-2 max-h-48 overflow-y-auto">
+                            <ul class="space-y-2 text-sm pt-2 max-h-48 overflow-y-auto divide-y divide-slate-100 flex-1">
                                 <template x-for="s in supplierList" :key="s.id">
-                                    <li class="bg-gray-50 p-2 rounded flex justify-between items-center">
-                                        <span x-text="(s.nama || s.nama_supplier || 'Tanpa Nama') + ' (' + (s.telp || 'Tanpa Telp') + ')'"></span>
-                                        <div class="space-x-1">
-                                            <button @click="pilihEditSupplier(s)" class="bg-yellow-500 text-white px-2 py-1 rounded text-xs">Edit</button>
-                                            <button @click="hapusSupplier(s.id)" class="bg-red-500 text-white px-2 py-1 rounded text-xs">Hapus</button>
+                                    <li class="bg-slate-50/50 p-3 rounded-xl flex justify-between items-center hover:bg-slate-50 transition">
+                                        <span class="font-semibold text-slate-700 text-xs" x-text="(s.nama || s.nama_supplier || 'Tanpa Nama') + ' (' + (s.telp || 'Tanpa Telp') + ')'"></span>
+                                        <div class="space-x-1 shrink-0">
+                                            <button @click="pilihEditSupplier(s)" class="bg-amber-500 text-white px-2 py-1 rounded-lg text-xs font-bold hover:bg-amber-600 transition">Edit</button>
+                                            <button @click="hapusSupplier(s.id)" class="bg-rose-500 text-white px-2 py-1 rounded-lg text-xs font-bold hover:bg-rose-600 transition">Hapus</button>
                                         </div>
                                     </li>
                                 </template>
@@ -270,59 +362,63 @@
                     </div>
                 </div>
 
-                <div x-show="userRole === 'admin' && adminTab === 'pengeluaran'" class="space-y-6">
-                    <h2 class="text-xl font-bold text-gray-800">Manajemen Pengeluaran & Pendapatan Mekanik</h2>
+                <!-- TAB 4: PENGELUARAN & PENDAPATAN MEKANIK -->
+                <div x-show="userRole === 'admin' && adminTab === 'pengeluaran'" class="space-y-6" x-cloak>
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-900 tracking-tight">Manajemen Pengeluaran & Pendapatan Mekanik</h2>
+                        <p class="text-sm text-slate-500">Catat biaya operasional dan kelola insentif gaji jasa mekanik.</p>
+                    </div>
                     
-                    <div class="bg-white p-5 rounded-lg shadow space-y-4">
-                        <h3 class="font-semibold text-gray-700 border-b pb-2">Form Input Pengeluaran Umum</h3>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+                        <h3 class="font-bold text-slate-800 border-b border-slate-100 pb-3">Form Input Pengeluaran Umum</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                            <input type="text" x-model="formPengeluaran.id" readonly class="border p-2 rounded w-full bg-gray-100 font-bold">
-                            <select x-model="formPengeluaran.kategori" class="border p-2 rounded w-full">
+                            <input type="text" x-model="formPengeluaran.id" readonly class="border border-slate-200 p-3 rounded-xl w-full bg-slate-50 font-bold text-slate-700 font-mono">
+                            <select x-model="formPengeluaran.kategori" class="border border-slate-200 p-3 rounded-xl w-full bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
                                 <option value="operasional">Operasional</option>
                                 <option value="lainnya">Lainnya</option>
                             </select>
-                            <input type="number" x-model="formPengeluaran.nominal" placeholder="Nominal (Rp)" class="border p-2 rounded w-full">
-                            <input type="text" x-model="formPengeluaran.keterangan" placeholder="Keterangan Pengeluaran" class="border p-2 rounded w-full">
+                            <input type="number" x-model="formPengeluaran.nominal" placeholder="Nominal (Rp)" class="border border-slate-200 p-3 rounded-xl w-full focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
+                            <input type="text" x-model="formPengeluaran.keterangan" placeholder="Keterangan Pengeluaran" class="border border-slate-200 p-3 rounded-xl w-full focus:ring-2 focus:ring-indigo-500 focus:outline-none transition">
                         </div>
-                        <button @click="simpanPengeluaran()" class="bg-blue-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-blue-700 transition">Simpan Pengeluaran</button>
+                        <button @click="simpanPengeluaran()" class="bg-indigo-600 text-white px-5 py-3 rounded-xl text-sm font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition">Simpan Pengeluaran</button>
                     </div>
 
-                    <div class="bg-white p-5 rounded-lg shadow space-y-4">
-                        <h3 class="font-semibold text-gray-700 border-b pb-2">Daftar Pendapatan Mekanik (Berdasarkan Hasil Jasa Riwayat Kasir)</h3>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 space-y-4">
+                        <h3 class="font-bold text-slate-800 border-b border-slate-100 pb-3">Daftar Pendapatan Mekanik (Berdasarkan Hasil Jasa Riwayat Kasir)</h3>
                         
-                        <div class="flex items-center gap-2 mb-2 w-full md:w-auto">
-                            <label class="text-sm font-semibold text-gray-600">Filter Rentang Waktu:</label>
-                            <input type="date" x-model="filterPendapatanMekanik.mulai" class="border p-1.5 rounded text-sm">
-                            <span class="text-gray-500">-</span>
-                            <input type="date" x-model="filterPendapatanMekanik.selesai" class="border p-1.5 rounded text-sm">
-                            <button @click="filterPendapatanMekanik = {mulai: '', selesai: ''}" class="bg-gray-200 text-gray-700 px-3 py-1.5 rounded text-xs font-bold hover:bg-gray-300">Reset</button>
+                        <div class="flex flex-wrap items-center gap-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <label class="text-sm font-bold text-slate-600">Filter Rentang Waktu:</label>
+                            <input type="date" x-model="filterPendapatanMekanik.mulai" class="border border-slate-200 bg-white p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <span class="text-slate-400 font-semibold">-</span>
+                            <input type="date" x-model="filterPendapatanMekanik.selesai" class="border border-slate-200 bg-white p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <button @click="filterPendapatanMekanik = {mulai: '', selesai: ''}" class="bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-xs font-bold hover:bg-slate-300 transition">Reset</button>
                         </div>
 
-                        <div class="overflow-x-auto pt-2">
+                        <div class="overflow-x-auto rounded-xl border border-slate-100 pt-2">
                             <table class="w-full text-left text-sm border-collapse">
                                 <thead>
-                                    <tr class="bg-gray-100 border-b text-gray-600">
-                                        <th class="p-2">Nama Mekanik</th>
-                                        <th class="p-2">Total Layanan Jasa</th>
-                                        <th class="p-2">Total Pendapatan Jasa</th>
-                                        <th class="p-2 text-center">Aksi</th>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-xs tracking-wider font-bold">
+                                        <th class="p-3.5">Nama Mekanik</th>
+                                        <th class="p-3.5">Total Layanan Jasa</th>
+                                        <th class="p-3.5">Total Pendapatan Jasa</th>
+                                        <th class="p-3.5 text-center">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody class="divide-y divide-slate-100">
                                     <template x-for="item in rekapPendapatanMekanik" :key="item.nama_mekanik">
-                                        <tr class="border-b hover:bg-gray-50">
-                                            <td class="p-2 font-bold" x-text="item.nama_mekanik"></td>
-                                            <td class="p-2" x-text="item.total_layanan + ' Transaksi / Jasa'"></td>
-                                            <td class="p-2 text-blue-600 font-bold" x-text="'Rp ' + Number(item.total_pendapatan || 0).toLocaleString()"></td>
-                                            <td class="p-2 text-center space-x-1">
-                                                <button @click="bukaDetailMekanik(item)" class="bg-blue-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-600 shadow-sm">Detail</button>
-                                                <button @click="bayarGajiMekanik(item)" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 shadow-sm" :disabled="item.total_pendapatan === 0" :class="item.total_pendapatan === 0 ? 'opacity-50 cursor-not-allowed' : ''">Bayar Gaji</button>
+                                        <tr class="hover:bg-slate-50/80 transition">
+                                            <td class="p-3.5 font-bold text-slate-800" x-text="item.nama_mekanik"></td>
+                                            <td class="p-3.5 text-slate-600" x-text="item.total_layanan + ' Transaksi / Jasa'"></td>
+                                            <td class="p-3.5 text-indigo-600 font-bold" x-text="'Rp ' + Number(item.total_pendapatan || 0).toLocaleString()"></td>
+                                            <td class="p-3.5 text-center space-x-2">
+                                                <button @click="bukaDetailMekanik(item)" class="bg-indigo-500 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold hover:bg-indigo-600 shadow-sm transition">Detail</button>
+                                                <button @click="bayarGajiMekanik(item)" class="bg-emerald-600 text-white px-3.5 py-1.5 rounded-xl text-xs font-bold hover:bg-emerald-700 shadow-sm transition" :disabled="item.total_pendapatan === 0" :class="item.total_pendapatan === 0 ? 'opacity-50 cursor-not-allowed' : ''">Bayar Gaji</button>
                                             </td>
                                         </tr>
                                     </template>
                                     <template x-if="rekapPendapatanMekanik.length === 0">
                                         <tr>
-                                            <td colspan="4" class="p-4 text-center text-gray-500">Tidak ada data pendapatan mekanik pada rentang waktu ini.</td>
+                                            <td colspan="4" class="p-8 text-center text-slate-400 font-medium">Tidak ada data pendapatan mekanik pada rentang waktu ini.</td>
                                         </tr>
                                     </template>
                                 </tbody>
@@ -331,18 +427,22 @@
                     </div>
                 </div>
 
-                <div x-show="userRole === 'admin' && adminTab === 'riwayat'" class="space-y-6">
-                    <h2 class="text-xl font-bold text-gray-800">Riwayat Transaksi Seluruhnya</h2>
-                    <div class="bg-white p-5 rounded-lg shadow space-y-4">
-                        <div class="flex flex-col md:flex-row justify-between items-center gap-4 border-b pb-4">
+                <!-- TAB 5: RIWAYAT TRANSAKSI -->
+                <div x-show="userRole === 'admin' && adminTab === 'riwayat'" class="space-y-6" x-cloak>
+                    <div>
+                        <h2 class="text-2xl font-black text-slate-900 tracking-tight">Riwayat Transaksi Seluruhnya</h2>
+                        <p class="text-sm text-slate-500">Log aktivitas keuangan, kasir, pembelian, dan gaji mekanik.</p>
+                    </div>
+                    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200/80 space-y-5">
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-4 border-b border-slate-100 pb-4">
                             <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
                                 <div class="flex items-center gap-2">
-                                    <label class="text-sm font-semibold text-gray-600">Filter Tanggal:</label>
-                                    <input type="date" x-model="filterTanggal" class="border p-2 rounded text-sm">
+                                    <label class="text-xs font-bold text-slate-600 uppercase">Filter Tanggal:</label>
+                                    <input type="date" x-model="filterTanggal" class="border border-slate-200 bg-white p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                                 </div>
                                 <div class="flex items-center gap-2">
-                                    <label class="text-sm font-semibold text-gray-600">Filter Tipe:</label>
-                                    <select x-model="filterTipe" class="border p-2 rounded text-sm bg-white">
+                                    <label class="text-xs font-bold text-slate-600 uppercase">Filter Tipe:</label>
+                                    <select x-model="filterTipe" class="border border-slate-200 bg-white p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                                         <option value="">-- Semua Tipe --</option>
                                         <option value="Kasir">Kasir</option>
                                         <option value="Restock / Pembelian">Restock / Pembelian</option>
@@ -350,57 +450,57 @@
                                         <option value="Pengeluaran">Pengeluaran Umum</option>
                                     </select>
                                 </div>
-                                <button @click="filterTanggal = ''; filterTipe = ''" class="bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm font-semibold hover:bg-gray-300">Reset</button>
+                                <button @click="filterTanggal = ''; filterTipe = ''" class="bg-slate-100 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-200 transition">Reset</button>
                             </div>
-                            <div class="flex gap-2 w-full md:w-auto justify-end">
-                                <button @click="downloadCSV()" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-green-700">📥 Download CSV</button>
-                                <button @click="hapusSemuaRiwayat()" class="bg-red-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-red-700">🗑️ Hapus Semua</button>
+                            <div class="flex gap-3 w-full md:w-auto justify-end">
+                                <button @click="downloadCSV()" class="bg-emerald-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-700 shadow-md shadow-emerald-200 transition">📥 Download CSV</button>
+                                <button @click="hapusSemuaRiwayat()" class="bg-rose-600 text-white px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-rose-700 shadow-md shadow-rose-200 transition">🗑️ Hapus Semua</button>
                             </div>
                         </div>
 
-                        <div class="overflow-x-auto">
+                        <div class="overflow-x-auto rounded-xl border border-slate-100">
                             <table class="w-full text-left text-sm border-collapse">
                                 <thead>
-                                    <tr class="bg-gray-100 border-b text-gray-600">
-                                        <th class="p-2">Tanggal</th>
-                                        <th class="p-2">Tipe</th>
-                                        <th class="p-2">Keterangan / Item</th>
-                                        <th class="p-2">Jumlah / Qty</th>
-                                        <th class="p-2">Total / Nominal</th>
-                                        <th class="p-2">Status</th>
-                                        <th class="p-2 text-center">Aksi</th>
+                                    <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-xs tracking-wider font-bold">
+                                        <th class="p-3.5">Tanggal</th>
+                                        <th class="p-3.5">Tipe</th>
+                                        <th class="p-3.5">Keterangan / Item</th>
+                                        <th class="p-3.5">Jumlah / Qty</th>
+                                        <th class="p-3.5">Total / Nominal</th>
+                                        <th class="p-3.5">Status</th>
+                                        <th class="p-3.5 text-center">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody class="divide-y divide-slate-100">
                                     <template x-for="t in filteredRiwayatList" :key="t.uniqueId">
-                                        <tr class="border-b hover:bg-gray-50">
-                                            <td class="p-2" x-text="t.tanggal"></td>
-                                            <td class="p-2 font-semibold" 
+                                        <tr class="hover:bg-slate-50/80 transition">
+                                            <td class="p-3.5 text-slate-600" x-text="t.tanggal"></td>
+                                            <td class="p-3.5 font-bold" 
                                                 :class="{
                                                     'text-blue-600': t.tipe === 'Kasir',
-                                                    'text-purple-600': t.tipe.includes('Restock'),
-                                                    'text-orange-600': t.tipe.includes('Pengeluaran'),
-                                                    'text-green-600': t.tipe === 'Gaji Mekanik'
+                                                    'text-indigo-600': t.tipe.includes('Restock'),
+                                                    'text-amber-600': t.tipe.includes('Pengeluaran'),
+                                                    'text-emerald-600': t.tipe === 'Gaji Mekanik'
                                                 }" 
                                                 x-text="t.tipe">
                                             </td>
-                                            <td class="p-2" x-text="t.keterangan"></td>
-                                            <td class="p-2" x-text="t.jumlah"></td>
-                                            <td class="p-2 font-bold" x-text="'Rp ' + Number(t.total || 0).toLocaleString()"></td>
-                                            <td class="p-2">
-                                                <span class="px-2 py-1 rounded text-xs font-bold"
-                                                      :class="t.status === 'Lunas' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'"
+                                            <td class="p-3.5 text-slate-700 font-medium" x-text="t.keterangan"></td>
+                                            <td class="p-3.5 text-slate-600 font-semibold" x-text="t.jumlah"></td>
+                                            <td class="p-3.5 font-bold text-slate-800" x-text="'Rp ' + Number(t.total || 0).toLocaleString()"></td>
+                                            <td class="p-3.5">
+                                                <span class="px-2.5 py-1 rounded-lg text-xs font-bold"
+                                                      :class="t.status === 'Lunas' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'"
                                                       x-text="t.status">
                                                 </span>
                                             </td>
-                                            <td class="p-2 text-center">
-                                                <button @click="hapusSatuRiwayat(t)" class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600">Hapus</button>
+                                            <td class="p-3.5 text-center">
+                                                <button @click="hapusSatuRiwayat(t)" class="bg-rose-500 text-white px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-rose-600 transition shadow-sm">Hapus</button>
                                             </td>
                                         </tr>
                                     </template>
                                     <template x-if="filteredRiwayatList.length === 0">
                                         <tr>
-                                            <td colspan="7" class="p-4 text-center text-gray-500">Tidak ada riwayat transaksi.</td>
+                                            <td colspan="7" class="p-8 text-center text-slate-400 font-medium">Tidak ada riwayat transaksi.</td>
                                         </tr>
                                     </template>
                                 </tbody>
@@ -409,85 +509,89 @@
                     </div>
                 </div>
 
-                <div x-show="userRole === 'admin' && adminTab === 'laporan'" class="space-y-6" id="printable-area">
+                <!-- TAB 6: LAPORAN KEUANGAN -->
+                <div x-show="userRole === 'admin' && adminTab === 'laporan'" class="space-y-6" id="printable-area" x-cloak>
                     <div class="flex justify-between items-center">
-                        <h2 class="text-xl font-bold text-gray-800">Laporan Keuangan</h2>
-                        <button @click="window.print()" class="no-print bg-gray-800 text-white px-4 py-2 rounded text-sm font-bold hover:bg-black">🖨️ Print Laporan</button>
+                        <div>
+                            <h2 class="text-2xl font-black text-slate-900 tracking-tight">Laporan Keuangan</h2>
+                            <p class="text-sm text-slate-500">Analisis laba rugi bersih operasional bengkel secara real-time.</p>
+                        </div>
+                        <button @click="window.print()" class="no-print bg-slate-900 text-white px-5 py-3 rounded-xl text-sm font-bold hover:bg-black shadow-lg shadow-slate-300 transition flex items-center gap-2">🖨️ Print Laporan</button>
                     </div>
 
-                    <div class="bg-white p-4 rounded-lg shadow flex flex-wrap gap-4 items-center no-print">
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 flex flex-wrap gap-4 items-center no-print">
                         <div>
-                            <label class="block text-xs font-semibold text-gray-600 mb-1">Filter Per Hari</label>
-                            <input type="date" x-model="laporanFilter.hari" @change="laporanFilter.bulan = ''; laporanFilter.tahun = ''" class="border p-2 rounded text-sm">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Filter Per Hari</label>
+                            <input type="date" x-model="laporanFilter.hari" @change="laporanFilter.bulan = ''; laporanFilter.tahun = ''" class="border border-slate-200 bg-white p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-600 mb-1">Filter Per Bulan (YYYY-MM)</label>
-                            <input type="month" x-model="laporanFilter.bulan" @change="laporanFilter.hari = ''; laporanFilter.tahun = ''" class="border p-2 rounded text-sm">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Filter Per Bulan (YYYY-MM)</label>
+                            <input type="month" x-model="laporanFilter.bulan" @change="laporanFilter.hari = ''; laporanFilter.tahun = ''" class="border border-slate-200 bg-white p-2.5 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-600 mb-1">Filter Per Tahun (YYYY)</label>
-                            <input type="number" placeholder="Contoh: 2026" x-model="laporanFilter.tahun" @change="laporanFilter.hari = ''; laporanFilter.bulan = ''" class="border p-2 rounded text-sm w-36">
+                            <label class="block text-xs font-bold text-slate-500 uppercase tracking-wider mb-1.5">Filter Per Tahun (YYYY)</label>
+                            <input type="number" placeholder="Contoh: 2026" x-model="laporanFilter.tahun" @change="laporanFilter.hari = ''; laporanFilter.bulan = ''" class="border border-slate-200 bg-white p-2.5 rounded-xl text-sm w-36 focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         </div>
                         <div class="flex items-end">
-                            <button @click="laporanFilter = { hari: '', bulan: '', tahun: '' }" class="bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm mt-5">Reset Filter</button>
+                            <button @click="laporanFilter = { hari: '', bulan: '', tahun: '' }" class="bg-slate-100 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-200 transition mt-6">Reset Filter</button>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div class="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
-                            <p class="text-xs text-gray-500">Pemasukan Kotor</p>
-                            <p class="text-lg font-bold" x-text="'Rp ' + Number(hitungLaporan.pemasukanKotor).toLocaleString()"></p>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 border-l-4 border-l-emerald-500 space-y-1">
+                            <p class="text-xs font-bold text-slate-400 uppercase">Pemasukan Kotor</p>
+                            <p class="text-xl font-black text-slate-800" x-text="'Rp ' + Number(hitungLaporan.pemasukanKotor).toLocaleString()"></p>
                         </div>
-                        <div class="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500">
-                            <p class="text-xs text-gray-500">Modal Terjual (HPP)</p>
-                            <p class="text-lg font-bold" x-text="'Rp ' + Number(hitungLaporan.hpp).toLocaleString()"></p>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 border-l-4 border-l-amber-500 space-y-1">
+                            <p class="text-xs font-bold text-slate-400 uppercase">Modal Terjual (HPP)</p>
+                            <p class="text-xl font-black text-slate-800" x-text="'Rp ' + Number(hitungLaporan.hpp).toLocaleString()"></p>
                         </div>
-                        <div class="bg-white p-4 rounded-lg shadow border-l-4 border-red-500">
-                            <p class="text-xs text-gray-500">Total Pengeluaran</p>
-                            <p class="text-lg font-bold" x-text="'Rp ' + Number(hitungLaporan.pengeluaran).toLocaleString()"></p>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 border-l-4 border-l-rose-500 space-y-1">
+                            <p class="text-xs font-bold text-slate-400 uppercase">Total Pengeluaran</p>
+                            <p class="text-xl font-black text-slate-800" x-text="'Rp ' + Number(hitungLaporan.pengeluaran).toLocaleString()"></p>
                         </div>
-                        <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
-                            <p class="text-xs text-gray-500">Pemasukan Bersih</p>
-                            <p class="text-lg font-bold text-blue-600" x-text="'Rp ' + Number(hitungLaporan.pemasukanBersih).toLocaleString()"></p>
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/80 border-l-4 border-l-indigo-600 space-y-1">
+                            <p class="text-xs font-bold text-slate-400 uppercase">Pemasukan Bersih</p>
+                            <p class="text-xl font-black text-indigo-600" x-text="'Rp ' + Number(hitungLaporan.pemasukanBersih).toLocaleString()"></p>
                         </div>
                     </div>
 
-                    <!-- Tabel Laporan Keuangan ala Excel -->
-                    <div class="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-300 mt-6">
+                    <!-- Tabel Laporan Keuangan -->
+                    <div class="bg-white shadow-sm rounded-2xl overflow-hidden border border-slate-200/80 mt-6">
                         <div class="overflow-x-auto">
-                            <table class="w-full border-collapse border border-gray-300 text-sm text-left text-gray-800">
+                            <table class="w-full border-collapse text-sm text-left text-slate-800">
                                 <thead>
-                                    <tr class="bg-gray-100 font-semibold text-gray-700">
-                                        <th class="border border-gray-300 px-3 py-2.5 text-center w-12">No</th>
-                                        <th class="border border-gray-300 px-3 py-2.5">Keterangan / Komponen Keuangan</th>
-                                        <th class="border border-gray-300 px-3 py-2.5 text-center w-36">Kategori</th>
-                                        <th class="border border-gray-300 px-3 py-2.5 text-right w-48">Jumlah (Rp)</th>
+                                    <tr class="bg-slate-50 font-bold text-slate-700 uppercase text-xs tracking-wider border-b border-slate-200">
+                                        <th class="border-r border-slate-200 px-4 py-3.5 text-center w-12">No</th>
+                                        <th class="border-r border-slate-200 px-4 py-3.5">Keterangan / Komponen Keuangan</th>
+                                        <th class="border-r border-slate-200 px-4 py-3.5 text-center w-36">Kategori</th>
+                                        <th class="px-4 py-3.5 text-right w-48">Jumlah (Rp)</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="border border-gray-300 px-3 py-2.5 text-center">1</td>
-                                        <td class="border border-gray-300 px-3 py-2.5 font-medium">Pemasukan Kotor (Penjualan Sparepart & Jasa)</td>
-                                        <td class="border border-gray-300 px-3 py-2.5 text-center text-emerald-600 font-semibold">Pemasukan</td>
-                                        <td class="border border-gray-300 px-3 py-2.5 text-right font-medium" x-text="'Rp ' + Number(hitungLaporan.pemasukanKotor).toLocaleString()"></td>
+                                <tbody class="divide-y divide-slate-200 font-medium">
+                                    <tr class="hover:bg-slate-50/50 transition">
+                                        <td class="border-r border-slate-200 px-4 py-3 text-center">1</td>
+                                        <td class="border-r border-slate-200 px-4 py-3 text-slate-900">Pemasukan Kotor (Penjualan Sparepart & Jasa)</td>
+                                        <td class="border-r border-slate-200 px-4 py-3 text-center text-emerald-600 font-bold">Pemasukan</td>
+                                        <td class="px-4 py-3 text-right text-slate-900 font-semibold" x-text="'Rp ' + Number(hitungLaporan.pemasukanKotor).toLocaleString()"></td>
                                     </tr>
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="border border-gray-300 px-3 py-2.5 text-center">2</td>
-                                        <td class="border border-gray-300 px-3 py-2.5 font-medium">Modal Barang Terjual (HPP)</td>
-                                        <td class="border border-gray-300 px-3 py-2.5 text-center text-amber-600 font-semibold">HPP</td>
-                                        <td class="border border-gray-300 px-3 py-2.5 text-right font-medium" x-text="'Rp ' + Number(hitungLaporan.hpp).toLocaleString()"></td>
+                                    <tr class="hover:bg-slate-50/50 transition">
+                                        <td class="border-r border-slate-200 px-4 py-3 text-center">2</td>
+                                        <td class="border-r border-slate-200 px-4 py-3 text-slate-900">Modal Barang Terjual (HPP)</td>
+                                        <td class="border-r border-slate-200 px-4 py-3 text-center text-amber-600 font-bold">HPP</td>
+                                        <td class="px-4 py-3 text-right text-slate-900 font-semibold" x-text="'Rp ' + Number(hitungLaporan.hpp).toLocaleString()"></td>
                                     </tr>
-                                    <tr class="hover:bg-gray-50">
-                                        <td class="border border-gray-300 px-3 py-2.5 text-center">3</td>
-                                        <td class="border border-gray-300 px-3 py-2.5 font-medium">Total Pengeluaran Operasional Bengkel</td>
-                                        <td class="border border-gray-300 px-3 py-2.5 text-center text-rose-600 font-semibold">Pengeluaran</td>
-                                        <td class="border border-gray-300 px-3 py-2.5 text-right font-medium" x-text="'Rp ' + Number(hitungLaporan.pengeluaran).toLocaleString()"></td>
+                                    <tr class="hover:bg-slate-50/50 transition">
+                                        <td class="border-r border-slate-200 px-4 py-3 text-center">3</td>
+                                        <td class="border-r border-slate-200 px-4 py-3 text-slate-900">Total Pengeluaran Operasional Bengkel</td>
+                                        <td class="border-r border-slate-200 px-4 py-3 text-center text-rose-600 font-bold">Pengeluaran</td>
+                                        <td class="px-4 py-3 text-right text-slate-900 font-semibold" x-text="'Rp ' + Number(hitungLaporan.pengeluaran).toLocaleString()"></td>
                                     </tr>
                                 </tbody>
                                 <tfoot>
-                                    <tr class="bg-gray-100 font-bold text-gray-900">
-                                        <td colspan="3" class="border border-gray-300 px-3 py-3 text-right">Pemasukan Bersih (Net Income):</td>
-                                        <td class="border border-gray-300 px-3 py-3 text-right text-blue-600 text-base" x-text="'Rp ' + Number(hitungLaporan.pemasukanBersih).toLocaleString()"></td>
+                                    <tr class="bg-slate-100 font-black text-slate-900 border-t-2 border-slate-200">
+                                        <td colspan="3" class="border-r border-slate-200 px-4 py-4 text-right">Pemasukan Bersih (Net Income):</td>
+                                        <td class="px-4 py-4 text-right text-indigo-600 text-lg" x-text="'Rp ' + Number(hitungLaporan.pemasukanBersih).toLocaleString()"></td>
                                     </tr>
                                 </tfoot>
                             </table>
@@ -499,84 +603,84 @@
     </div>
 
     <!-- MODAL DETAIL PENDAPATAN MEKANIK -->
-    <div x-show="showDetailModal" class="fixed inset-0 bg-black bg-opacity-55 flex items-center justify-center z-50 p-4" x-cloak>
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="bg-blue-600 text-white px-5 py-3 flex justify-between items-center">
+    <div x-show="showDetailModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" x-cloak>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200">
+            <div class="bg-indigo-600 text-white px-6 py-4 flex justify-between items-center">
                 <h3 class="font-bold text-lg" x-text="'Rincian Layanan Jasa - ' + (selectedMekanikDetail?.nama_mekanik || '')"></h3>
-                <button @click="showDetailModal = false" class="text-white hover:text-gray-200 font-bold text-xl">&times;</button>
+                <button @click="showDetailModal = false" class="text-white hover:text-indigo-200 font-bold text-xl">×</button>
             </div>
-            <div class="p-5 overflow-y-auto space-y-4 flex-1">
-                <div class="flex justify-between items-center bg-gray-50 p-3 rounded text-sm">
-                    <span>Total Layanan: <strong x-text="(selectedMekanikDetail?.total_layanan || 0) + ' Transaksi / Jasa'"></strong></span>
-                    <span>Total Pendapatan Jasa: <strong class="text-blue-600" x-text="'Rp ' + Number(selectedMekanikDetail?.total_pendapatan || 0).toLocaleString()"></strong></span>
+            <div class="p-6 overflow-y-auto space-y-4 flex-1">
+                <div class="flex justify-between items-center bg-slate-50 p-4 rounded-xl text-sm border border-slate-100">
+                    <span class="text-slate-600">Total Layanan: <strong class="text-slate-800" x-text="(selectedMekanikDetail?.total_layanan || 0) + ' Transaksi / Jasa'"></strong></span>
+                    <span class="text-slate-600">Total Pendapatan Jasa: <strong class="text-indigo-600" x-text="'Rp ' + Number(selectedMekanikDetail?.total_pendapatan || 0).toLocaleString()"></strong></span>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto rounded-xl border border-slate-100">
                     <table class="w-full text-left text-sm border-collapse">
                         <thead>
-                            <tr class="bg-gray-100 border-b text-gray-600">
-                                <th class="p-2">Tanggal</th>
-                                <th class="p-2">No Trx / Plat</th>
-                                <th class="p-2">Nama Jasa</th>
-                                <th class="p-2">Qty</th>
-                                <th class="p-2">Subtotal</th>
+                            <tr class="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase text-xs tracking-wider font-bold">
+                                <th class="p-3">Tanggal</th>
+                                <th class="p-3">No Trx / Plat</th>
+                                <th class="p-3">Nama Jasa</th>
+                                <th class="p-3">Qty</th>
+                                <th class="p-3">Subtotal</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody class="divide-y divide-slate-100">
                             <template x-for="r in (selectedMekanikDetail?.rincian_layanan || [])" :key="r.tanggal + r.no_antrian + r.nama_jasa">
-                                <tr class="border-b hover:bg-gray-50">
-                                    <td class="p-2" x-text="r.tanggal"></td>
-                                    <td class="p-2 font-mono text-xs" x-text="r.no_antrian + ' / ' + r.plat_nomor"></td>
-                                    <td class="p-2 font-medium" x-text="r.nama_jasa"></td>
-                                    <td class="p-2" x-text="r.qty"></td>
-                                    <td class="p-2 font-bold text-gray-700" x-text="'Rp ' + Number(r.subtotal).toLocaleString()"></td>
+                                <tr class="hover:bg-slate-50 transition">
+                                    <td class="p-3 text-slate-600" x-text="r.tanggal"></td>
+                                    <td class="p-3 font-mono text-xs font-semibold text-indigo-600" x-text="r.no_antrian + ' / ' + r.plat_nomor"></td>
+                                    <td class="p-3 font-medium text-slate-800" x-text="r.nama_jasa"></td>
+                                    <td class="p-3 text-slate-600" x-text="r.qty"></td>
+                                    <td class="p-3 font-bold text-slate-800" x-text="'Rp ' + Number(r.subtotal).toLocaleString()"></td>
                                 </tr>
                             </template>
                             <template x-if="!selectedMekanikDetail?.rincian_layanan || selectedMekanikDetail.rincian_layanan.length === 0">
                                 <tr>
-                                    <td colspan="5" class="p-4 text-center text-gray-500">Tidak ada rincian jasa.</td>
+                                    <td colspan="5" class="p-8 text-center text-slate-400 font-medium">Tidak ada rincian jasa.</td>
                                 </tr>
                             </template>
                         </tbody>
                     </table>
                 </div>
             </div>
-            <div class="bg-gray-100 px-5 py-3 flex justify-end">
-                <button @click="showDetailModal = false" class="bg-gray-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-gray-700">Tutup</button>
+            <div class="bg-slate-50 px-6 py-4 flex justify-end border-t border-slate-100">
+                <button @click="showDetailModal = false" class="bg-slate-700 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-800 transition">Tutup</button>
             </div>
         </div>
     </div>
 
     <!-- MODAL BAYAR GAJI MEKANIK -->
-    <div x-show="showBayarGajiModal" class="fixed inset-0 bg-black bg-opacity-55 flex items-center justify-center z-50 p-4" x-cloak>
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden flex flex-col">
-            <div class="bg-green-600 text-white px-5 py-3 flex justify-between items-center">
+    <div x-show="showBayarGajiModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center z-50 p-4" x-cloak>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col border border-slate-200">
+            <div class="bg-emerald-600 text-white px-6 py-4 flex justify-between items-center">
                 <h3 class="font-bold text-lg" x-text="'Bayar Gaji - ' + (selectedMekanikBayar?.nama_mekanik || '')"></h3>
-                <button @click="showBayarGajiModal = false" class="text-white hover:text-gray-200 font-bold text-xl">&times;</button>
+                <button @click="showBayarGajiModal = false" class="text-white hover:text-emerald-200 font-bold text-xl">×</button>
             </div>
-            <div class="p-5 space-y-4">
-                <div class="bg-gray-50 p-3 rounded text-sm space-y-1">
+            <div class="p-6 space-y-4">
+                <div class="bg-slate-50 p-4 rounded-xl text-sm space-y-2 border border-slate-100">
                     <div class="flex justify-between">
-                        <span class="text-gray-600">Total Pendapatan Jasa:</span>
-                        <strong class="text-blue-600" x-text="'Rp ' + Number(selectedMekanikBayar?.total_pendapatan || 0).toLocaleString()"></strong>
+                        <span class="text-slate-600 font-medium">Total Pendapatan Jasa:</span>
+                        <strong class="text-indigo-600 font-bold" x-text="'Rp ' + Number(selectedMekanikBayar?.total_pendapatan || 0).toLocaleString()"></strong>
                     </div>
                     <div class="flex justify-between">
-                        <span class="text-gray-600">Total Layanan:</span>
-                        <strong x-text="(selectedMekanikBayar?.total_layanan || 0) + ' Transaksi / Jasa'"></strong>
+                        <span class="text-slate-600 font-medium">Total Layanan:</span>
+                        <strong class="text-slate-800 font-bold" x-text="(selectedMekanikBayar?.total_layanan || 0) + ' Transaksi / Jasa'"></strong>
                     </div>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Nominal Gaji yang Dibayarkan (Rp)</label>
-                    <input type="number" x-model="formBayarGaji.nominal" class="border p-2 rounded w-full text-sm font-bold" placeholder="Masukkan nominal...">
-                    <p class="text-xs text-gray-500 mt-1">Dapat disesuaikan atau dipotong untuk operasional / kasbon.</p>
+                    <label class="block text-sm font-bold text-slate-700 mb-1.5">Nominal Gaji yang Dibayarkan (Rp)</label>
+                    <input type="number" x-model="formBayarGaji.nominal" class="border border-slate-200 p-3 rounded-xl w-full text-sm font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Masukkan nominal...">
+                    <p class="text-xs text-slate-400 mt-1">Dapat disesuaikan atau dipotong untuk operasional / kasbon.</p>
                 </div>
                 <div>
-                    <label class="block text-sm font-semibold text-gray-700 mb-1">Keterangan / Catatan</label>
-                    <input type="text" x-model="formBayarGaji.keterangan" class="border p-2 rounded w-full text-sm" placeholder="Contoh: Potong operasional / kasbon">
+                    <label class="block text-sm font-bold text-slate-700 mb-1.5">Keterangan / Catatan</label>
+                    <input type="text" x-model="formBayarGaji.keterangan" class="border border-slate-200 p-3 rounded-xl w-full text-sm text-slate-800 focus:ring-2 focus:ring-emerald-500 focus:outline-none" placeholder="Contoh: Potong operasional / kasbon">
                 </div>
             </div>
-            <div class="bg-gray-100 px-5 py-3 flex justify-end space-x-2">
-                <button @click="showBayarGajiModal = false" class="bg-gray-400 text-white px-4 py-2 rounded text-sm font-bold hover:bg-gray-500">Batal</button>
-                <button @click="prosesBayarGaji()" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-green-700">Simpan & Bayar</button>
+            <div class="bg-slate-50 px-6 py-4 flex justify-end space-x-2 border-t border-slate-100">
+                <button @click="showBayarGajiModal = false" class="bg-slate-200 text-slate-700 px-4 py-2.5 rounded-xl text-sm font-bold hover:bg-slate-300 transition">Batal</button>
+                <button @click="prosesBayarGaji()" class="bg-emerald-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-700 shadow-md shadow-emerald-200 transition">Simpan & Bayar</button>
             </div>
         </div>
     </div>
@@ -592,6 +696,12 @@
                 adminTab: 'barang',
                 barangList: [], supplierList: [], mekanikList: [], jasaList: [], pengeluaranList: [], transaksiList: [], pembelianList: [], riwayatTransaksiList: [], antrianList: [],
                 
+                toast: { show: false, message: '', type: 'success' },
+                showToast(message, type = 'success') {
+                    this.toast = { show: true, message, type };
+                    setTimeout(() => { this.toast.show = false; }, 3500);
+                },
+
                 editMekanikId: null, editJasaId: null, editSupplierId: null,
                 
                 showDetailModal: false,
@@ -672,7 +782,7 @@
                         let text = e.target.result;
                         let lines = text.split("\n").map(l => l.trim()).filter(l => l.length > 0);
                         if(lines.length <= 1) {
-                            alert("File CSV kosong atau format tidak sesuai.");
+                            this.showToast("File CSV kosong atau format tidak sesuai.", "error");
                             event.target.value = '';
                             return;
                         }
@@ -699,7 +809,7 @@
                             }
                         }
 
-                        alert(`Import selesai!\nBerhasil ditambahkan: ${successCount} item\nGagal/Format salah: ${failCount} item`);
+                        this.showToast(`Import selesai! Berhasil: ${successCount}, Gagal: ${failCount}`, successCount > 0 ? 'success' : 'error');
                         event.target.value = '';
                         await this.loadData();
                     };
@@ -716,22 +826,22 @@
                     this.inputMekanikNama = '';
                 },
                 async simpanMekanik() {
-                    if(!this.inputMekanikNama) return alert('Nama mekanik tidak boleh kosong!');
+                    if(!this.inputMekanikNama) return this.showToast('Nama mekanik tidak boleh kosong!', 'error');
                     if(this.editMekanikId) {
                         const { error } = await _supabase.from('mekanik').update({ nama: this.inputMekanikNama }).eq('id', this.editMekanikId);
-                        if(error) alert('Gagal: ' + error.message);
-                        else { alert('Mekanik berhasil diupdate!'); this.batalEditMekanik(); await this.loadData(); }
+                        if(error) this.showToast('Gagal: ' + error.message, 'error');
+                        else { this.showToast('Mekanik berhasil diupdate!'); this.batalEditMekanik(); await this.loadData(); }
                     } else {
                         const { error } = await _supabase.from('mekanik').insert([{ nama: this.inputMekanikNama }]);
-                        if(error) alert('Gagal: ' + error.message);
-                        else { this.inputMekanikNama = ''; await this.loadData(); }
+                        if(error) this.showToast('Gagal: ' + error.message, 'error');
+                        else { this.showToast('Mekanik berhasil disimpan!'); this.inputMekanikNama = ''; await this.loadData(); }
                     }
                 },
                 async hapusMekanik(id) {
                     if(confirm("Yakin ingin menghapus mekanik ini?")) {
                         const { error } = await _supabase.from('mekanik').delete().eq('id', id);
-                        if(error) alert('Gagal: ' + error.message);
-                        else await this.loadData();
+                        if(error) this.showToast('Gagal: ' + error.message, 'error');
+                        else { this.showToast('Mekanik berhasil dihapus!'); await this.loadData(); }
                     }
                 },
 
@@ -744,22 +854,22 @@
                     this.inputJasaNama = '';
                 },
                 async simpanJasa() {
-                    if(!this.inputJasaNama) return alert('Nama jasa tidak boleh kosong!');
+                    if(!this.inputJasaNama) return this.showToast('Nama jasa tidak boleh kosong!', 'error');
                     if(this.editJasaId) {
                         const { error } = await _supabase.from('jasa').update({ nama_jasa: this.inputJasaNama }).eq('id', this.editJasaId);
-                        if(error) alert('Gagal: ' + error.message);
-                        else { alert('Jasa berhasil diupdate!'); this.batalEditJasa(); await this.loadData(); }
+                        if(error) this.showToast('Gagal: ' + error.message, 'error');
+                        else { this.showToast('Jasa berhasil diupdate!'); this.batalEditJasa(); await this.loadData(); }
                     } else {
                         const { error } = await _supabase.from('jasa').insert([{ nama_jasa: this.inputJasaNama }]);
-                        if(error) alert('Gagal: ' + error.message);
-                        else { this.inputJasaNama = ''; await this.loadData(); }
+                        if(error) this.showToast('Gagal: ' + error.message, 'error');
+                        else { this.showToast('Jasa berhasil disimpan!'); this.inputJasaNama = ''; await this.loadData(); }
                     }
                 },
                 async hapusJasa(id) {
                     if(confirm("Yakin ingin menghapus jasa ini?")) {
                         const { error } = await _supabase.from('jasa').delete().eq('id', id);
-                        if(error) alert('Gagal: ' + error.message);
-                        else await this.loadData();
+                        if(error) this.showToast('Gagal: ' + error.message, 'error');
+                        else { this.showToast('Jasa berhasil dihapus!'); await this.loadData(); }
                     }
                 },
 
@@ -772,22 +882,22 @@
                     this.formSupplier = { nama: '', alamat: '', telp: '' };
                 },
                 async simpanSupplier() {
-                    if(!this.formSupplier.nama) return alert('Nama supplier tidak boleh kosong!');
+                    if(!this.formSupplier.nama) return this.showToast('Nama supplier tidak boleh kosong!', 'error');
                     if(this.editSupplierId) {
                         const { error } = await _supabase.from('supplier').update(this.formSupplier).eq('id', this.editSupplierId);
-                        if(error) alert('Gagal: ' + error.message);
-                        else { alert('Supplier berhasil diupdate!'); this.batalEditSupplier(); await this.loadData(); }
+                        if(error) this.showToast('Gagal: ' + error.message, 'error');
+                        else { this.showToast('Supplier berhasil diupdate!'); this.batalEditSupplier(); await this.loadData(); }
                     } else {
                         const { error } = await _supabase.from('supplier').insert([this.formSupplier]);
-                        if(error) alert('Gagal: ' + error.message);
-                        else { this.formSupplier = { nama: '', alamat: '', telp: '' }; await this.loadData(); }
+                        if(error) this.showToast('Gagal: ' + error.message, 'error');
+                        else { this.showToast('Supplier berhasil disimpan!'); this.formSupplier = { nama: '', alamat: '', telp: '' }; await this.loadData(); }
                     }
                 },
                 async hapusSupplier(id) {
                     if(confirm("Yakin ingin menghapus supplier ini?")) {
                         const { error } = await _supabase.from('supplier').delete().eq('id', id);
-                        if(error) alert('Gagal: ' + error.message);
-                        else await this.loadData();
+                        if(error) this.showToast('Gagal: ' + error.message, 'error');
+                        else { this.showToast('Supplier berhasil dihapus!'); await this.loadData(); }
                     }
                 },
 
@@ -858,7 +968,7 @@
 
                 async prosesBayarGaji() {
                     if(!this.formBayarGaji.nominal || this.formBayarGaji.nominal <= 0) {
-                        return alert('Nominal pembayaran gaji harus lebih besar dari 0!');
+                        return this.showToast('Nominal pembayaran gaji harus lebih besar dari 0!', 'error');
                     }
 
                     const item = this.selectedMekanikBayar;
@@ -890,14 +1000,14 @@
                         }
 
                         if (error) {
-                            alert("Gagal mencatat pengeluaran: " + error.message);
+                            this.showToast("Gagal mencatat pengeluaran: " + error.message, 'error');
                         } else {
-                            alert(`Gaji mekanik ${item.nama_mekanik} sebesar Rp ${Number(payload.nominal).toLocaleString()} berhasil dicatat sebagai pengeluaran!`);
+                            this.showToast(`Gaji mekanik ${item.nama_mekanik} berhasil dicatat!`);
                             this.showBayarGajiModal = false;
                             await this.loadData();
                         }
                     } catch(err) {
-                        alert("Terjadi kesalahan: " + err.message);
+                        this.showToast("Terjadi kesalahan: " + err.message, 'error');
                     }
                 },
 
@@ -972,8 +1082,8 @@
                             error = retry.error;
                         }
 
-                        if(error) alert('Gagal menghapus: ' + error.message);
-                        else await this.loadData();
+                        if(error) this.showToast('Gagal menghapus: ' + error.message, 'error');
+                        else { this.showToast('Transaksi berhasil dihapus.'); await this.loadData(); }
                     }
                 },
 
@@ -993,7 +1103,7 @@
                                 await _supabase.from('pengeluaran').delete().eq('id_pengeluaran', ex.id_pengeluaran);
                             }
                         }
-                        alert('Semua riwayat berhasil dihapus.');
+                        this.showToast('Semua riwayat berhasil dihapus.');
                         await this.loadData();
                     }
                 },
@@ -1072,9 +1182,9 @@
                 async bayarHutang(item) {
                     if(confirm("Lunasi pembayaran hutang untuk transaksi ini?")) {
                         const { error } = await _supabase.from('pembelian').update({ metode_pembayaran: 'Tunai' }).eq('id', item.id);
-                        if(error) alert('Gagal: ' + error.message);
+                        if(error) this.showToast('Gagal: ' + error.message, 'error');
                         else {
-                            alert('Pembayaran berhasil dilunasi!');
+                            this.showToast('Pembayaran berhasil dilunasi!');
                             await this.loadData();
                         }
                     }
@@ -1082,9 +1192,9 @@
 
                 async simpanBarang() {
                     const { error } = await _supabase.from('barang').insert([this.formBarang]);
-                    if(error) alert('Gagal: ' + error.message);
+                    if(error) this.showToast('Gagal: ' + error.message, 'error');
                     else {
-                        alert('Barang disimpan!');
+                        this.showToast('Barang berhasil disimpan!');
                         this.formBarang = { kode_barang: '', nama_barang: '', supplier: '', harga_beli: '', harga_jual: '', stok: '' };
                         await this.loadData();
                     }
@@ -1092,22 +1202,21 @@
 
                 async simpanRestock() {
                     if(!this.formRestock.kode_barang || !this.formRestock.jumlah) {
-                        alert('Mohon pilih barang dan isi jumlah!');
-                        return;
+                        return this.showToast('Mohon pilih barang dan isi jumlah!', 'error');
                     }
                     this.formRestock.total_bayar = Number(this.formRestock.jumlah) * Number(this.formRestock.harga_beli);
                     
                     const { error } = await _supabase.from('pembelian').insert([this.formRestock]);
-                    if(error) alert('Gagal: ' + error.message);
+                    if(error) this.showToast('Gagal: ' + error.message, 'error');
                     else {
-                        alert('Stok berhasil ditambah & data pembelian tersimpan!');
+                        this.showToast('Stok berhasil ditambah & data pembelian tersimpan!');
                         this.formRestock = { kode_barang: '', jumlah: '', harga_beli: '', metode_pembayaran: 'Tunai', tanggal_jatuh_tempo: '', total_bayar: 0 };
                         await this.loadData();
                     }
                 },
 
                 async simpanPengeluaran() {
-                    if(!this.formPengeluaran.nominal) return alert('Nominal pengeluaran wajib diisi!');
+                    if(!this.formPengeluaran.nominal) return this.showToast('Nominal pengeluaran wajib diisi!', 'error');
                     
                     const now = new Date();
                     const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
@@ -1129,14 +1238,14 @@
                             let retry = await _supabase.from('pengeluaran').insert([altPayload]);
                             error = retry.error;
                         }
-                        if(error) alert('Gagal: ' + error.message);
+                        if(error) this.showToast('Gagal: ' + error.message, 'error');
                         else {
-                            alert('Pengeluaran disimpan!');
+                            this.showToast('Pengeluaran berhasil disimpan!');
                             this.formPengeluaran = { id: 'PK-' + String(listLength + 2).padStart(3, '0'), kategori: 'operasional', nominal: '', keterangan: '' };
                             await this.loadData();
                         }
                     } catch(err) {
-                        alert('Terjadi kesalahan: ' + err.message);
+                        this.showToast('Terjadi kesalahan: ' + err.message, 'error');
                     }
                 }
             }
