@@ -281,7 +281,7 @@
                                         <th class="p-2">Nama Mekanik</th>
                                         <th class="p-2">Total Layanan Jasa</th>
                                         <th class="p-2">Total Pendapatan Jasa</th>
-                                        <th class="p-2 text-center">Aksi (Bayar Gaji)</th>
+                                        <th class="p-2 text-center">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -290,7 +290,8 @@
                                             <td class="p-2 font-bold" x-text="item.nama_mekanik"></td>
                                             <td class="p-2" x-text="item.total_layanan + ' Transaksi / Jasa'"></td>
                                             <td class="p-2 text-blue-600 font-bold" x-text="'Rp ' + Number(item.total_pendapatan || 0).toLocaleString()"></td>
-                                            <td class="p-2 text-center">
+                                            <td class="p-2 text-center space-x-1">
+                                                <button @click="bukaDetailMekanik(item)" class="bg-blue-500 text-white px-3 py-1 rounded text-xs font-bold hover:bg-blue-600 shadow-sm">Detail</button>
                                                 <button @click="bayarGajiMekanik(item)" class="bg-green-600 text-white px-3 py-1 rounded text-xs font-bold hover:bg-green-700 shadow-sm" :disabled="item.total_pendapatan === 0" :class="item.total_pendapatan === 0 ? 'opacity-50 cursor-not-allowed' : ''">Bayar Gaji</button>
                                             </td>
                                         </tr>
@@ -411,6 +412,54 @@
         </div>
     </div>
 
+    <!-- MODAL DETAIL PENDAPATAN MEKANIK -->
+    <div x-show="showDetailModal" class="fixed inset-0 bg-black bg-opacity-55 flex items-center justify-center z-50 p-4" x-cloak>
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="bg-blue-600 text-white px-5 py-3 flex justify-between items-center">
+                <h3 class="font-bold text-lg" x-text="'Rincian Layanan Jasa - ' + (selectedMekanikDetail?.nama_mekanik || '')"></h3>
+                <button @click="showDetailModal = false" class="text-white hover:text-gray-200 font-bold text-xl">&times;</button>
+            </div>
+            <div class="p-5 overflow-y-auto space-y-4 flex-1">
+                <div class="flex justify-between items-center bg-gray-50 p-3 rounded text-sm">
+                    <span>Total Layanan: <strong x-text="(selectedMekanikDetail?.total_layanan || 0) + ' Transaksi / Jasa'"></strong></span>
+                    <span>Total Pendapatan Jasa: <strong class="text-blue-600" x-text="'Rp ' + Number(selectedMekanikDetail?.total_pendapatan || 0).toLocaleString()"></strong></span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm border-collapse">
+                        <thead>
+                            <tr class="bg-gray-100 border-b text-gray-600">
+                                <th class="p-2">Tanggal</th>
+                                <th class="p-2">No Trx / Plat</th>
+                                <th class="p-2">Nama Jasa</th>
+                                <th class="p-2">Qty</th>
+                                <th class="p-2">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="r in (selectedMekanikDetail?.rincian_layanan || [])" :key="r.tanggal + r.no_antrian + r.nama_jasa">
+                                <tr class="border-b hover:bg-gray-50">
+                                    <td class="p-2" x-text="r.tanggal"></td>
+                                    <td class="p-2 font-mono text-xs" x-text="r.no_antrian + ' / ' + r.plat_nomor"></td>
+                                    <td class="p-2 font-medium" x-text="r.nama_jasa"></td>
+                                    <td class="p-2" x-text="r.qty"></td>
+                                    <td class="p-2 font-bold text-gray-700" x-text="'Rp ' + Number(r.subtotal).toLocaleString()"></td>
+                                </tr>
+                            </template>
+                            <template x-if="!selectedMekanikDetail?.rincian_layanan || selectedMekanikDetail.rincian_layanan.length === 0">
+                                <tr>
+                                    <td colspan="5" class="p-4 text-center text-gray-500">Tidak ada rincian jasa.</td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="bg-gray-100 px-5 py-3 flex justify-end">
+                <button @click="showDetailModal = false" class="bg-gray-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-gray-700">Tutup</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://lppqzaiipeqomwvzsqvr.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwcHF6YWlpcGVxb213dnpzcXZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNjA5MzAsImV4cCI6MjEwMTkzNjkzMH0.rSKXoseYUe3mtON-_s_pC5YsfVWrxFz3tUkuVTyAOn0';
@@ -424,6 +473,9 @@
                 
                 editMekanikId: null, editJasaId: null, editSupplierId: null,
                 
+                showDetailModal: false,
+                selectedMekanikDetail: null,
+
                 formBarang: { kode_barang: 'BRG-001', nama_barang: '', supplier: '', harga_beli: '', harga_jual: '', stok: '' },
                 formRestock: { kode_barang: '', jumlah: '', harga_beli: '', metode_pembayaran: 'Tunai', tanggal_jatuh_tempo: '', total_bayar: 0 },
                 inputMekanikNama: '', inputJasaNama: '',
@@ -456,14 +508,12 @@
                         this.pengeluaranList = pengeluaran || [];
                         this.formPengeluaran.id = 'PA-00' + (this.pengeluaranList.length + 1);
 
-                        // Ambil semua transaksi (kasir pos/antrian lama)
                         const { data: transaksi } = await _supabase.from('transaksi').select('*');
                         this.transaksiList = transaksi || [];
 
                         const { data: pembelian } = await _supabase.from('pembelian').select('*');
                         this.pembelianList = pembelian || [];
 
-                        // Ambil data riwayat_transaksi dari tabel kasir terbaru
                         const { data: riwayat } = await _supabase.from('riwayat_transaksi').select('*');
                         this.riwayatTransaksiList = riwayat || [];
                         
@@ -564,7 +614,6 @@
                 get rekapPendapatanMekanik() {
                     let rekapData = {};
 
-                    // Ekstraksi data mekanik dan jasa dari antrianList yang statusnya selesai
                     this.antrianList.forEach(a => {
                         if (a.status && a.status.toLowerCase().includes('selesai')) {
                             let tgl = a.created_at ? a.created_at.split('T')[0] : (a.tanggal || '');
@@ -585,19 +634,36 @@
                                     if (item.tipe === 'jasa' && item.mekanik && item.mekanik !== '-') {
                                         let namaMekanik = item.mekanik.toUpperCase();
                                         if (!rekapData[namaMekanik]) {
-                                            rekapData[namaMekanik] = { nama_mekanik: namaMekanik, total_pendapatan: 0, total_layanan: 0 };
+                                            rekapData[namaMekanik] = { 
+                                                nama_mekanik: namaMekanik, 
+                                                total_pendapatan: 0, 
+                                                total_layanan: 0,
+                                                rincian_layanan: [] 
+                                            };
                                         }
                                         rekapData[namaMekanik].total_pendapatan += (Number(item.harga || 0) * Number(item.qty || 1));
                                         rekapData[namaMekanik].total_layanan += Number(item.qty || 1);
+                                        rekapData[namaMekanik].rincian_layanan.push({
+                                            tanggal: tgl,
+                                            no_antrian: a.no_antrian || a.id,
+                                            plat_nomor: a.plat_nomor || '-',
+                                            nama_jasa: item.nama || item.nama_jasa || 'Jasa Servis',
+                                            harga: Number(item.harga || 0),
+                                            qty: Number(item.qty || 1),
+                                            subtotal: Number(item.harga || 0) * Number(item.qty || 1)
+                                        });
                                     }
                                 });
                             }
                         }
                     });
 
-                    // Konversi object map ke array untuk iterasi tabel
-                    let hasilArray = Object.values(rekapData);
-                    return hasilArray;
+                    return Object.values(rekapData);
+                },
+
+                bukaDetailMekanik(item) {
+                    this.selectedMekanikDetail = item;
+                    this.showDetailModal = true;
                 },
 
                 async bayarGajiMekanik(item) {
@@ -644,7 +710,6 @@
 
                 // --- RIWAYAT TRANSAKSI GABUNGAN & FILTER ---
                 get gabunganRiwayatList() {
-                    // Gabungkan riwayat dari tabel antrian (kasir)
                     let listKasirAntrian = this.antrianList.filter(a => a.status && a.status.toLowerCase().includes('selesai')).map(t => ({
                         uniqueId: 'antrian-' + t.id,
                         originalId: t.id,
@@ -652,7 +717,7 @@
                         tanggal: t.created_at ? t.created_at.split('T')[0] : (t.tanggal || '-'),
                         tipe: 'Kasir',
                         keterangan: 'No Antrian/Trx: ' + (t.no_antrian || t.id) + ' | Plat: ' + (t.plat_nomor || '-'),
-                        jumlah: 1, // 1 transaksi utuh
+                        jumlah: 1,
                         total: t.total_tagihan || 0,
                         status: t.status && t.status.toLowerCase().includes('hutang') ? 'Hutang' : 'Lunas'
                     }));
@@ -734,7 +799,6 @@
                     let pemasukanKotor = filteredKasir.reduce((acc, curr) => acc + Number(curr.total_tagihan || 0), 0);
                     let totalPengeluaran = filteredPengeluaran.reduce((acc, curr) => acc + Number(curr.nominal || curr.jumlah || 0), 0);
                     
-                    // Hitung HPP Modal Terjual dari detail keranjang kasir
                     let hpp = 0;
                     filteredKasir.forEach(t => {
                         if(t.keranjang) {
@@ -742,7 +806,6 @@
                              try{ items = typeof t.keranjang === 'string' ? JSON.parse(t.keranjang) : t.keranjang; } catch(e){}
                              items.forEach(i => {
                                  if(i.tipe === 'barang') {
-                                      // Cari harga beli asli dari master barang
                                       let targetB = this.barangList.find(b => (b.id || b.kode_barang || b.kode) == i.kode_or_id);
                                       let hbeli = targetB ? Number(targetB.harga_beli || 0) : 0;
                                       hpp += hbeli * Number(i.qty || 1);
