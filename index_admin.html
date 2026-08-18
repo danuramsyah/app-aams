@@ -10,7 +10,6 @@
 </head>
 <body class="bg-gray-100 font-sans" x-data="bengkelApp()" x-init="initApp()">
 
-    <!-- DASHBOARD UTAMA -->
     <div class="min-h-screen flex flex-col">
         <header class="bg-blue-600 text-white shadow-md p-4 flex justify-between items-center">
             <div class="flex items-center gap-3">
@@ -20,7 +19,6 @@
         </header>
 
         <div class="flex flex-1 flex-col md:flex-row">
-            <!-- Sidebar Admin -->
             <aside class="w-full md:w-64 bg-white shadow-md p-4 space-y-2">
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Menu Admin</p>
                 <button @click="adminTab = 'barang'" :class="adminTab === 'barang' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">📦 Master Barang</button>
@@ -31,11 +29,8 @@
                 <button @click="adminTab = 'laporan'" :class="adminTab === 'laporan' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">📊 Laporan Keuangan</button>
             </aside>
 
-
-            <!-- Main Content -->
             <main class="flex-1 p-6 overflow-y-auto">
                 
-                <!-- 1. MASTER BARANG -->
                 <div x-show="userRole === 'admin' && adminTab === 'barang'" class="space-y-6">
                     <h2 class="text-xl font-bold text-gray-800">Manajemen Stok Barang & Sparepart</h2>
                     <div class="bg-white p-5 rounded-lg shadow space-y-4">
@@ -103,11 +98,9 @@
                     </div>
                 </div>
 
-                <!-- 2. BARANG MASUK (RESTOCK) -->
                 <div x-show="userRole === 'admin' && adminTab === 'pembelian'" class="space-y-6">
                     <h2 class="text-xl font-bold text-gray-800">Manajemen Barang Masuk (Restock)</h2>
                     
-                    <!-- Form Input -->
                     <div class="bg-white p-5 rounded-lg shadow space-y-4">
                         <h3 class="font-semibold text-gray-700 border-b pb-2">Form Input Barang Masuk</h3>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -143,7 +136,6 @@
                         <button @click="simpanRestock()" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-green-700 transition">Proses Barang Masuk</button>
                     </div>
 
-                    <!-- Tabel Daftar Input Barang Masuk -->
                     <div class="bg-white p-5 rounded-lg shadow space-y-3">
                         <h3 class="font-semibold text-gray-700 border-b pb-2">Daftar Input Barang Masuk</h3>
                         <div class="overflow-x-auto">
@@ -189,46 +181,71 @@
                     </div>
                 </div>
 
-                <!-- 3. MEKANIK, JASA & SUPPLIER -->
                 <div x-show="userRole === 'admin' && adminTab === 'master_lain'" class="space-y-6">
                     <h2 class="text-xl font-bold text-gray-800">Master Data: Mekanik, Jasa & Supplier</h2>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div class="bg-white p-5 rounded-lg shadow space-y-3">
-                            <h3 class="font-semibold text-gray-700 border-b pb-2">Input Mekanik</h3>
+                            <h3 class="font-semibold text-gray-700 border-b pb-2" x-text="editMekanikId ? 'Edit Mekanik' : 'Input Mekanik'"></h3>
                             <input type="text" x-model="inputMekanikNama" placeholder="Nama Mekanik" class="border p-2 rounded w-full text-sm">
-                            <button @click="tambahMekanik()" class="w-full bg-blue-600 text-white py-2 rounded text-sm font-bold">Simpan Mekanik</button>
-                            <ul class="space-y-1 text-sm pt-2 max-h-48 overflow-y-auto">
+                            <div class="flex gap-2">
+                                <button @click="simpanMekanik()" class="flex-1 bg-blue-600 text-white py-2 rounded text-sm font-bold" x-text="editMekanikId ? 'Update' : 'Simpan Mekanik'"></button>
+                                <button x-show="editMekanikId" @click="batalEditMekanik()" class="bg-gray-400 text-white px-3 py-2 rounded text-sm font-bold">Batal</button>
+                            </div>
+                            <ul class="space-y-2 text-sm pt-2 max-h-48 overflow-y-auto">
                                 <template x-for="m in mekanikList" :key="m.id">
-                                    <li class="bg-gray-50 p-2 rounded" x-text="m.nama || m.nama_mekanik"></li>
+                                    <li class="bg-gray-50 p-2 rounded flex justify-between items-center">
+                                        <span x-text="m.nama || m.nama_mekanik"></span>
+                                        <div class="space-x-1">
+                                            <button @click="pilihEditMekanik(m)" class="bg-yellow-500 text-white px-2 py-1 rounded text-xs">Edit</button>
+                                            <button @click="hapusMekanik(m.id)" class="bg-red-500 text-white px-2 py-1 rounded text-xs">Hapus</button>
+                                        </div>
+                                    </li>
                                 </template>
                             </ul>
                         </div>
                         <div class="bg-white p-5 rounded-lg shadow space-y-3">
-                            <h3 class="font-semibold text-gray-700 border-b pb-2">Input Jasa Servis</h3>
+                            <h3 class="font-semibold text-gray-700 border-b pb-2" x-text="editJasaId ? 'Edit Jasa Servis' : 'Input Jasa Servis'"></h3>
                             <input type="text" x-model="inputJasaNama" placeholder="Nama Jasa" class="border p-2 rounded w-full text-sm">
-                            <button @click="tambahJasa()" class="w-full bg-blue-600 text-white py-2 rounded text-sm font-bold">Simpan Jasa</button>
-                            <ul class="space-y-1 text-sm pt-2 max-h-48 overflow-y-auto">
+                            <div class="flex gap-2">
+                                <button @click="simpanJasa()" class="flex-1 bg-blue-600 text-white py-2 rounded text-sm font-bold" x-text="editJasaId ? 'Update' : 'Simpan Jasa'"></button>
+                                <button x-show="editJasaId" @click="batalEditJasa()" class="bg-gray-400 text-white px-3 py-2 rounded text-sm font-bold">Batal</button>
+                            </div>
+                            <ul class="space-y-2 text-sm pt-2 max-h-48 overflow-y-auto">
                                 <template x-for="j in jasaList" :key="j.id">
-                                    <li class="bg-gray-50 p-2 rounded" x-text="j.nama_jasa || j.nama"></li>
+                                    <li class="bg-gray-50 p-2 rounded flex justify-between items-center">
+                                        <span x-text="j.nama_jasa || j.nama"></span>
+                                        <div class="space-x-1">
+                                            <button @click="pilihEditJasa(j)" class="bg-yellow-500 text-white px-2 py-1 rounded text-xs">Edit</button>
+                                            <button @click="hapusJasa(j.id)" class="bg-red-500 text-white px-2 py-1 rounded text-xs">Hapus</button>
+                                        </div>
+                                    </li>
                                 </template>
                             </ul>
                         </div>
                         <div class="bg-white p-5 rounded-lg shadow space-y-3">
-                            <h3 class="font-semibold text-gray-700 border-b pb-2">Input Supplier</h3>
+                            <h3 class="font-semibold text-gray-700 border-b pb-2" x-text="editSupplierId ? 'Edit Supplier' : 'Input Supplier'"></h3>
                             <input type="text" x-model="formSupplier.nama" placeholder="Nama Supplier" class="border p-2 rounded w-full text-sm">
                             <input type="text" x-model="formSupplier.alamat" placeholder="Alamat" class="border p-2 rounded w-full text-sm">
                             <input type="text" x-model="formSupplier.telp" placeholder="No Telp" class="border p-2 rounded w-full text-sm">
-                            <button @click="tambahSupplier()" class="w-full bg-blue-600 text-white py-2 rounded text-sm font-bold">Simpan Supplier</button>
-                            <ul class="space-y-1 text-sm pt-2 max-h-48 overflow-y-auto">
+                            <div class="flex gap-2">
+                                <button @click="simpanSupplier()" class="flex-1 bg-blue-600 text-white py-2 rounded text-sm font-bold" x-text="editSupplierId ? 'Update' : 'Simpan Supplier'"></button>
+                                <button x-show="editSupplierId" @click="batalEditSupplier()" class="bg-gray-400 text-white px-3 py-2 rounded text-sm font-bold">Batal</button>
+                            </div>
+                            <ul class="space-y-2 text-sm pt-2 max-h-48 overflow-y-auto">
                                 <template x-for="s in supplierList" :key="s.id">
-                                    <li class="bg-gray-50 p-2 rounded" x-text="(s.nama || s.nama_supplier || 'Tanpa Nama') + ' (' + (s.telp || 'Tanpa Telp') + ')'"></li>
+                                    <li class="bg-gray-50 p-2 rounded flex justify-between items-center">
+                                        <span x-text="(s.nama || s.nama_supplier || 'Tanpa Nama') + ' (' + (s.telp || 'Tanpa Telp') + ')'"></span>
+                                        <div class="space-x-1">
+                                            <button @click="pilihEditSupplier(s)" class="bg-yellow-500 text-white px-2 py-1 rounded text-xs">Edit</button>
+                                            <button @click="hapusSupplier(s.id)" class="bg-red-500 text-white px-2 py-1 rounded text-xs">Hapus</button>
+                                        </div>
+                                    </li>
                                 </template>
                             </ul>
                         </div>
                     </div>
                 </div>
 
-                <!-- 4. PENGELUARAN & PENDAPATAN MEKANIK -->
                 <div x-show="userRole === 'admin' && adminTab === 'pengeluaran'" class="space-y-6">
                     <h2 class="text-xl font-bold text-gray-800">Manajemen Pengeluaran & Pendapatan Mekanik</h2>
                     
@@ -248,55 +265,29 @@
                     </div>
 
                     <div class="bg-white p-5 rounded-lg shadow space-y-4">
-                        <h3 class="font-semibold text-gray-700 border-b pb-2">Input & Daftar Pendapatan Mekanik per Hari</h3>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-                            <div>
-                                <label class="block text-gray-600 mb-1">Pilih Mekanik</label>
-                                <select x-model="formMekanikHarian.nama_mekanik" class="border p-2 rounded w-full">
-                                    <option value="">-- Pilih Mekanik --</option>
-                                    <template x-for="m in mekanikList" :key="m.id">
-                                        <option :value="m.nama || m.nama_mekanik" x-text="m.nama || m.nama_mekanik"></option>
-                                    </template>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-gray-600 mb-1">Tanggal</label>
-                                <input type="date" x-model="formMekanikHarian.tanggal" class="border p-2 rounded w-full">
-                            </div>
-                            <div>
-                                <label class="block text-gray-600 mb-1">Nominal Pendapatan (Rp)</label>
-                                <input type="number" x-model="formMekanikHarian.pendapatan" placeholder="Contoh: 150000" class="border p-2 rounded w-full">
-                            </div>
-                        </div>
-                        <button @click="simpanPendapatanMekanik()" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-green-700 transition">Simpan Pendapatan Mekanik</button>
-
-                        <div class="overflow-x-auto pt-4">
+                        <h3 class="font-semibold text-gray-700 border-b pb-2">Daftar Pendapatan Mekanik (Berdasarkan Hasil Jasa Riwayat Kasir)</h3>
+                        <div class="overflow-x-auto pt-2">
                             <table class="w-full text-left text-sm border-collapse">
                                 <thead>
                                     <tr class="bg-gray-100 border-b text-gray-600">
                                         <th class="p-2">Tanggal</th>
                                         <th class="p-2">Nama Mekanik</th>
-                                        <th class="p-2">Pendapatan</th>
-                                        <th class="p-2">Status</th>
-                                        <th class="p-2 text-center">Aksi</th>
+                                        <th class="p-2">Layanan Jasa</th>
+                                        <th class="p-2">Pendapatan Jasa</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    <template x-for="item in pendapatanMekanikList" :key="item.id">
+                                    <template x-for="item in pendapatanMekanikDariKasir" :key="item.id">
                                         <tr class="border-b hover:bg-gray-50">
                                             <td class="p-2" x-text="item.tanggal || '-'"></td>
                                             <td class="p-2 font-bold" x-text="item.nama_mekanik"></td>
+                                            <td class="p-2" x-text="item.nama_jasa || '-'"></td>
                                             <td class="p-2 text-blue-600 font-bold" x-text="'Rp ' + Number(item.pendapatan || 0).toLocaleString()"></td>
-                                            <td class="p-2">
-                                                <span class="px-2 py-1 rounded text-xs font-bold"
-                                                      :class="item.status === 'Lunas' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'"
-                                                      x-text="item.status || 'Belum Bayar'">
-                                                </span>
-                                            </td>
-                                            <td class="p-2 text-center">
-                                                <button x-show="item.status !== 'Lunas'" @click="bayarMekanik(item)" class="bg-blue-600 text-white px-3 py-1 rounded text-xs hover:bg-blue-700 font-bold">Bayar</button>
-                                                <span x-show="item.status === 'Lunas'" class="text-xs text-gray-400 font-semibold">Selesai</span>
-                                            </td>
+                                        </tr>
+                                    </template>
+                                    <template x-if="pendapatanMekanikDariKasir.length === 0">
+                                        <tr>
+                                            <td colspan="4" class="p-4 text-center text-gray-500">Belum ada data pendapatan mekanik dari transaksi kasir.</td>
                                         </tr>
                                     </template>
                                 </tbody>
@@ -305,58 +296,104 @@
                     </div>
                 </div>
 
-                <!-- 5. RIWAYAT TRANSAKSI -->
                 <div x-show="userRole === 'admin' && adminTab === 'riwayat'" class="space-y-6">
-                    <h2 class="text-xl font-bold text-gray-800">Riwayat Transaksi Barang Masuk (Lunas)</h2>
-                    <div class="bg-white p-5 rounded-lg shadow">
-                        <table class="w-full text-left text-sm border-collapse">
-                            <thead>
-                                <tr class="bg-gray-100 border-b text-gray-600">
-                                    <th class="p-2">Tanggal</th>
-                                    <th class="p-2">ID / Kode Barang</th>
-                                    <th class="p-2">Supplier</th>
-                                    <th class="p-2">Jumlah</th>
-                                    <th class="p-2">Total Bayar</th>
-                                    <th class="p-2">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <template x-for="t in pembelianList.filter(item => item.metode_pembayaran === 'Tunai')" :key="t.id">
-                                    <tr class="border-b hover:bg-gray-50">
-                                        <td class="p-2" x-text="t.created_at ? t.created_at.split('T')[0] : '-' "></td>
-                                        <td class="p-2 font-mono font-bold" x-text="t.kode_barang"></td>
-                                        <td class="p-2" x-text="t.supplier || '-'"></td>
-                                        <td class="p-2" x-text="t.jumlah"></td>
-                                        <td class="p-2 font-bold text-blue-600" x-text="'Rp ' + Number(t.total_bayar || 0).toLocaleString()"></td>
-                                        <td class="p-2">
-                                            <span class="px-2 py-1 rounded text-xs font-bold bg-green-100 text-green-600">Lunas</span>
-                                        </td>
+                    <h2 class="text-xl font-bold text-gray-800">Riwayat Transaksi Seluruhnya</h2>
+                    <div class="bg-white p-5 rounded-lg shadow space-y-4">
+                        <div class="flex flex-col md:flex-row justify-between items-center gap-4 border-b pb-4">
+                            <div class="flex items-center gap-2 w-full md:w-auto">
+                                <label class="text-sm font-semibold text-gray-600">Filter Tanggal:</label>
+                                <input type="date" x-model="filterTanggal" class="border p-2 rounded text-sm">
+                                <button @click="filterTanggal = ''" class="bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm">Reset</button>
+                            </div>
+                            <div class="flex gap-2 w-full md:w-auto justify-end">
+                                <button @click="downloadCSV()" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-green-700">📥 Download CSV</button>
+                                <button @click="hapusSemuaRiwayat()" class="bg-red-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-red-700">🗑️ Hapus Semua</button>
+                            </div>
+                        </div>
+
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm border-collapse">
+                                <thead>
+                                    <tr class="bg-gray-100 border-b text-gray-600">
+                                        <th class="p-2">Tanggal</th>
+                                        <th class="p-2">Tipe</th>
+                                        <th class="p-2">Keterangan / Item</th>
+                                        <th class="p-2">Jumlah / Qty</th>
+                                        <th class="p-2">Total / Nominal</th>
+                                        <th class="p-2">Status</th>
+                                        <th class="p-2 text-center">Aksi</th>
                                     </tr>
-                                </template>
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    <template x-for="t in filteredRiwayatList" :key="t.uniqueId">
+                                        <tr class="border-b hover:bg-gray-50">
+                                            <td class="p-2" x-text="t.tanggal"></td>
+                                            <td class="p-2 font-semibold" :class="t.tipe === 'Kasir' ? 'text-blue-600' : 'text-purple-600'" x-text="t.tipe"></td>
+                                            <td class="p-2" x-text="t.keterangan"></td>
+                                            <td class="p-2" x-text="t.jumlah"></td>
+                                            <td class="p-2 font-bold" x-text="'Rp ' + Number(t.total || 0).toLocaleString()"></td>
+                                            <td class="p-2">
+                                                <span class="px-2 py-1 rounded text-xs font-bold"
+                                                      :class="t.status === 'Lunas' ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'"
+                                                      x-text="t.status">
+                                                </span>
+                                            </td>
+                                            <td class="p-2 text-center">
+                                                <button @click="hapusSatuRiwayat(t)" class="bg-red-500 text-white px-2 py-1 rounded text-xs hover:bg-red-600">Hapus</button>
+                                            </td>
+                                        </tr>
+                                    </template>
+                                    <template x-if="filteredRiwayatList.length === 0">
+                                        <tr>
+                                            <td colspan="7" class="p-4 text-center text-gray-500">Tidak ada riwayat transaksi.</td>
+                                        </tr>
+                                    </template>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <!-- 6. LAPORAN KEUANGAN -->
                 <div x-show="userRole === 'admin' && adminTab === 'laporan'" class="space-y-6">
-                    <h2 class="text-xl font-bold text-gray-800">Laporan Keuangan</h2>
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-xl font-bold text-gray-800">Laporan Keuangan</h2>
+                        <button @click="window.print()" class="bg-gray-800 text-white px-4 py-2 rounded text-sm font-bold hover:bg-black">🖨️ Print Laporan</button>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-lg shadow flex flex-wrap gap-4 items-center">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Filter Per Hari</label>
+                            <input type="date" x-model="laporanFilter.hari" @change="laporanFilter.bulan = ''; laporanFilter.tahun = ''" class="border p-2 rounded text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Filter Per Bulan (YYYY-MM)</label>
+                            <input type="month" x-model="laporanFilter.bulan" @change="laporanFilter.hari = ''; laporanFilter.tahun = ''" class="border p-2 rounded text-sm">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-600 mb-1">Filter Per Tahun (YYYY)</label>
+                            <input type="number" placeholder="Contoh: 2026" x-model="laporanFilter.tahun" @change="laporanFilter.hari = ''; laporanFilter.bulan = ''" class="border p-2 rounded text-sm w-36">
+                        </div>
+                        <div class="flex items-end">
+                            <button @click="laporanFilter = { hari: '', bulan: '', tahun: '' }" class="bg-gray-200 text-gray-700 px-3 py-2 rounded text-sm mt-5">Reset Filter</button>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <div class="bg-white p-4 rounded-lg shadow border-l-4 border-green-500">
                             <p class="text-xs text-gray-500">Pemasukan Kotor</p>
-                            <p class="text-lg font-bold">Rp 0</p>
+                            <p class="text-lg font-bold" x-text="'Rp ' + Number(hitungLaporan.pemasukanKotor).toLocaleString()"></p>
                         </div>
                         <div class="bg-white p-4 rounded-lg shadow border-l-4 border-yellow-500">
                             <p class="text-xs text-gray-500">Modal Terjual (HPP)</p>
-                            <p class="text-lg font-bold">Rp 0</p>
+                            <p class="text-lg font-bold" x-text="'Rp ' + Number(hitungLaporan.hpp).toLocaleString()"></p>
                         </div>
                         <div class="bg-white p-4 rounded-lg shadow border-l-4 border-red-500">
                             <p class="text-xs text-gray-500">Total Pengeluaran</p>
-                            <p class="text-lg font-bold">Rp 0</p>
+                            <p class="text-lg font-bold" x-text="'Rp ' + Number(hitungLaporan.pengeluaran).toLocaleString()"></p>
                         </div>
                         <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
                             <p class="text-xs text-gray-500">Pemasukan Bersih</p>
-                            <p class="text-lg font-bold text-blue-600">Rp 0</p>
+                            <p class="text-lg font-bold text-blue-600" x-text="'Rp ' + Number(hitungLaporan.pemasukanBersih).toLocaleString()"></p>
                         </div>
                     </div>
                 </div>
@@ -365,7 +402,6 @@
     </div>
 
     <script>
-        // MASUKKAN KUNCI SUPABASE ANDA DI SINI
         const SUPABASE_URL = 'https://lppqzaiipeqomwvzsqvr.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwcHF6YWlpcGVxb213dnpzcXZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNjA5MzAsImV4cCI6MjEwMTkzNjkzMH0.rSKXoseYUe3mtON-_s_pC5YsfVWrxFz3tUkuVTyAOn0';
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -375,14 +411,17 @@
                 userRole: 'admin',
                 adminTab: 'barang',
                 barangList: [], supplierList: [], mekanikList: [], jasaList: [], pengeluaranList: [], transaksiList: [], pembelianList: [],
-                pendapatanMekanikList: [],
-                formMekanikHarian: { nama_mekanik: '', tanggal: '', pendapatan: '', status: 'Belum Bayar' },
+                
+                editMekanikId: null, editJasaId: null, editSupplierId: null,
                 
                 formBarang: { kode_barang: 'BRG-001', nama_barang: '', supplier: '', harga_beli: '', harga_jual: '', stok: '' },
                 formRestock: { kode_barang: '', jumlah: '', harga_beli: '', metode_pembayaran: 'Tunai', tanggal_jatuh_tempo: '', total_bayar: 0 },
                 inputMekanikNama: '', inputJasaNama: '',
                 formSupplier: { nama: '', alamat: '', telp: '' },
                 formPengeluaran: { id: 'PA-001', kategori: 'operasional', nominal: '', keterangan: '' },
+                
+                filterTanggal: '',
+                laporanFilter: { hari: '', bulan: '', tahun: '' },
                 
                 async initApp() { await this.loadData(); },
                 
@@ -411,12 +450,206 @@
 
                         const { data: pembelian } = await _supabase.from('pembelian').select('*');
                         this.pembelianList = pembelian || [];
-
-                        const { data: pendapatan } = await _supabase.from('pendapatan_mekanik').select('*');
-                        this.pendapatanMekanikList = pendapatan || [];
                     } catch (err) {
                         console.error("Gagal koneksi ke Supabase:", err);
                     }
+                },
+
+                // --- MASTER: MEKANIK, JASA, SUPPLIER (CRUD Edit & Hapus) ---
+                pilihEditMekanik(m) {
+                    this.editMekanikId = m.id;
+                    this.inputMekanikNama = m.nama || m.nama_mekanik || '';
+                },
+                batalEditMekanik() {
+                    this.editMekanikId = null;
+                    this.inputMekanikNama = '';
+                },
+                async simpanMekanik() {
+                    if(!this.inputMekanikNama) return alert('Nama mekanik tidak boleh kosong!');
+                    if(this.editMekanikId) {
+                        const { error } = await _supabase.from('mekanik').update({ nama: this.inputMekanikNama }).eq('id', this.editMekanikId);
+                        if(error) alert('Gagal: ' + error.message);
+                        else { alert('Mekanik berhasil diupdate!'); this.batalEditMekanik(); await this.loadData(); }
+                    } else {
+                        const { error } = await _supabase.from('mekanik').insert([{ nama: this.inputMekanikNama }]);
+                        if(error) alert('Gagal: ' + error.message);
+                        else { this.inputMekanikNama = ''; await this.loadData(); }
+                    }
+                },
+                async hapusMekanik(id) {
+                    if(confirm("Yakin ingin menghapus mekanik ini?")) {
+                        const { error } = await _supabase.from('mekanik').delete().eq('id', id);
+                        if(error) alert('Gagal: ' + error.message);
+                        else await this.loadData();
+                    }
+                },
+
+                pilihEditJasa(j) {
+                    this.editJasaId = j.id;
+                    this.inputJasaNama = j.nama_jasa || j.nama || '';
+                },
+                batalEditJasa() {
+                    this.editJasaId = null;
+                    this.inputJasaNama = '';
+                },
+                async simpanJasa() {
+                    if(!this.inputJasaNama) return alert('Nama jasa tidak boleh kosong!');
+                    if(this.editJasaId) {
+                        const { error } = await _supabase.from('jasa').update({ nama_jasa: this.inputJasaNama }).eq('id', this.editJasaId);
+                        if(error) alert('Gagal: ' + error.message);
+                        else { alert('Jasa berhasil diupdate!'); this.batalEditJasa(); await this.loadData(); }
+                    } else {
+                        const { error } = await _supabase.from('jasa').insert([{ nama_jasa: this.inputJasaNama }]);
+                        if(error) alert('Gagal: ' + error.message);
+                        else { this.inputJasaNama = ''; await this.loadData(); }
+                    }
+                },
+                async hapusJasa(id) {
+                    if(confirm("Yakin ingin menghapus jasa ini?")) {
+                        const { error } = await _supabase.from('jasa').delete().eq('id', id);
+                        if(error) alert('Gagal: ' + error.message);
+                        else await this.loadData();
+                    }
+                },
+
+                pilihEditSupplier(s) {
+                    this.editSupplierId = s.id;
+                    this.formSupplier = { nama: s.nama || s.nama_supplier || '', alamat: s.alamat || '', telp: s.telp || '' };
+                },
+                batalEditSupplier() {
+                    this.editSupplierId = null;
+                    this.formSupplier = { nama: '', alamat: '', telp: '' };
+                },
+                async simpanSupplier() {
+                    if(!this.formSupplier.nama) return alert('Nama supplier tidak boleh kosong!');
+                    if(this.editSupplierId) {
+                        const { error } = await _supabase.from('supplier').update(this.formSupplier).eq('id', this.editSupplierId);
+                        if(error) alert('Gagal: ' + error.message);
+                        else { alert('Supplier berhasil diupdate!'); this.batalEditSupplier(); await this.loadData(); }
+                    } else {
+                        const { error } = await _supabase.from('supplier').insert([this.formSupplier]);
+                        if(error) alert('Gagal: ' + error.message);
+                        else { this.formSupplier = { nama: '', alamat: '', telp: '' }; await this.loadData(); }
+                    }
+                },
+                async hapusSupplier(id) {
+                    if(confirm("Yakin ingin menghapus supplier ini?")) {
+                        const { error } = await _supabase.from('supplier').delete().eq('id', id);
+                        if(error) alert('Gagal: ' + error.message);
+                        else await this.loadData();
+                    }
+                },
+
+                // --- PENDAPATAN MEKANIK DARI TRANSAKSI KASIR ---
+                get pendapatanMekanikDariKasir() {
+                    return this.transaksiList
+                        .filter(t => t.nama_mekanik || t.mekanik || t.jasa || t.nama_jasa)
+                        .map((t, idx) => ({
+                            id: t.id || idx,
+                            tanggal: t.created_at ? t.created_at.split('T')[0] : (t.tanggal || '-'),
+                            nama_mekanik: t.nama_mekanik || t.mekanik || '-',
+                            nama_jasa: t.jasa || t.nama_jasa || '-',
+                            pendapatan: t.biaya_jasa || t.pendapatan_jasa || t.total_jasa || t.total || 0
+                        }));
+                },
+
+                // --- RIWAYAT TRANSAKSI GABUNGAN & FILTER ---
+                get gabunganRiwayatList() {
+                    let listKasir = this.transaksiList.map(t => ({
+                        uniqueId: 'kasir-' + t.id,
+                        originalId: t.id,
+                        source: 'transaksi',
+                        tanggal: t.created_at ? t.created_at.split('T')[0] : (t.tanggal || '-'),
+                        tipe: 'Kasir',
+                        keterangan: t.keterangan || t.nama_barang || t.item || 'Transaksi Penjualan/Servis',
+                        jumlah: t.jumlah || t.qty || 1,
+                        total: t.total || t.total_bayar || 0,
+                        status: 'Lunas'
+                    }));
+
+                    let listPembelian = this.pembelianList.map(p => ({
+                        uniqueId: 'pembelian-' + p.id,
+                        originalId: p.id,
+                        source: 'pembelian',
+                        tanggal: p.created_at ? p.created_at.split('T')[0] : (p.tanggal || '-'),
+                        tipe: 'Restock / Pembelian',
+                        keterangan: 'Barang Masuk: ' + (p.kode_barang || '-'),
+                        jumlah: p.jumlah || 0,
+                        total: p.total_bayar || 0,
+                        status: p.metode_pembayaran === 'Tempo' ? 'Hutang' : 'Lunas'
+                    }));
+
+                    return [...listKasir, ...listPembelian].sort((a, b) => new Date(b.tanggal) - new Date(a.tanggal));
+                },
+
+                get filteredRiwayatList() {
+                    if(!this.filterTanggal) return this.gabunganRiwayatList;
+                    return this.gabunganRiwayatList.filter(item => item.tanggal === this.filterTanggal);
+                },
+
+                async hapusSatuRiwayat(item) {
+                    if(confirm("Yakin ingin menghapus transaksi ini?")) {
+                        const tableTarget = item.source === 'transaksi' ? 'transaksi' : 'pembelian';
+                        const { error } = await _supabase.from(tableTarget).delete().eq('id', item.originalId);
+                        if(error) alert('Gagal menghapus: ' + error.message);
+                        else await this.loadData();
+                    }
+                },
+
+                async hapusSemuaRiwayat() {
+                    if(confirm("PERINGATAN: Yakin ingin menghapus seluruh riwayat transaksi (kasir dan pembelian)?")) {
+                        for(let t of this.transaksiList) {
+                            await _supabase.from('transaksi').delete().eq('id', t.id);
+                        }
+                        for(let p of this.pembelianList) {
+                            await _supabase.from('pembelian').delete().eq('id', p.id);
+                        }
+                        alert('Semua riwayat berhasil dihapus.');
+                        await this.loadData();
+                    }
+                },
+
+                downloadCSV() {
+                    let csvContent = "data:text/csv;charset=utf-8,Tanggal,Tipe,Keterangan,Jumlah,Total,Status\n";
+                    this.filteredRiwayatList.forEach(row => {
+                        csvContent += `"${row.tanggal}","${row.tipe}","${row.keterangan}","${row.jumlah}","${row.total}","${row.status}"\n`;
+                    });
+                    let encodedUri = encodeURI(csvContent);
+                    let link = document.createElement("a");
+                    link.setAttribute("href", encodedUri);
+                    link.setAttribute("download", "riwayat_transaksi_bengkel.csv");
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                },
+
+                // --- LAPORAN KEUANGAN DENGAN FILTER WAKTU & SEMUA TRANSAKSI ---
+                get hitungLaporan() {
+                    let filteredKasir = this.transaksiList;
+                    let filteredPengeluaran = this.pengeluaranList;
+
+                    if(this.laporanFilter.hari) {
+                        filteredKasir = filteredKasir.filter(t => (t.created_at && t.created_at.split('T')[0] === this.laporanFilter.hari) || t.tanggal === this.laporanFilter.hari);
+                        filteredPengeluaran = filteredPengeluaran.filter(p => (p.created_at && p.created_at.split('T')[0] === this.laporanFilter.hari) || p.tanggal === this.laporanFilter.hari);
+                    } else if(this.laporanFilter.bulan) {
+                        filteredKasir = filteredKasir.filter(t => (t.created_at && t.created_at.startsWith(this.laporanFilter.bulan)) || (t.tanggal && t.tanggal.startsWith(this.laporanFilter.bulan)));
+                        filteredPengeluaran = filteredPengeluaran.filter(p => (p.created_at && p.created_at.startsWith(this.laporanFilter.bulan)) || (p.tanggal && p.tanggal.startsWith(this.laporanFilter.bulan)));
+                    } else if(this.laporanFilter.tahun) {
+                        filteredKasir = filteredKasir.filter(t => (t.created_at && t.created_at.startsWith(this.laporanFilter.tahun)) || (t.tanggal && t.tanggal.startsWith(this.laporanFilter.tahun)));
+                        filteredPengeluaran = filteredPengeluaran.filter(p => (p.created_at && p.created_at.startsWith(this.laporanFilter.tahun)) || (p.tanggal && p.tanggal.startsWith(this.laporanFilter.tahun)));
+                    }
+
+                    let pemasukanKotor = filteredKasir.reduce((acc, curr) => acc + Number(curr.total || curr.total_bayar || 0), 0);
+                    let hpp = filteredKasir.reduce((acc, curr) => acc + Number(curr.hpp || curr.modal || 0), 0);
+                    let totalPengeluaran = filteredPengeluaran.reduce((acc, curr) => acc + Number(curr.nominal || curr.jumlah || 0), 0);
+                    let pemasukanBersih = pemasukanKotor - hpp - totalPengeluaran;
+
+                    return {
+                        pemasukanKotor,
+                        hpp,
+                        pengeluaran: totalPengeluaran,
+                        pemasukanBersih
+                    };
                 },
 
                 editPembelian(item) {
@@ -469,65 +702,12 @@
                     }
                 },
 
-                async tambahMekanik() {
-                    const { error } = await _supabase.from('mekanik').insert([{ nama: this.inputMekanikNama }]);
-                    if(error) alert('Gagal: ' + error.message);
-                    else {
-                        this.inputMekanikNama = '';
-                        await this.loadData();
-                    }
-                },
-
-                async tambahJasa() {
-                    const { error } = await _supabase.from('jasa').insert([{ nama_jasa: this.inputJasaNama }]);
-                    if(error) alert('Gagal: ' + error.message);
-                    else {
-                        this.inputJasaNama = '';
-                        await this.loadData();
-                    }
-                },
-
-                async tambahSupplier() {
-                    const { error } = await _supabase.from('supplier').insert([this.formSupplier]);
-                    if(error) alert('Gagal: ' + error.message);
-                    else {
-                        this.formSupplier = { nama: '', alamat: '', telp: '' };
-                        await this.loadData();
-                    }
-                },
-
                 async simpanPengeluaran() {
                     const { error } = await _supabase.from('pengeluaran').insert([this.formPengeluaran]);
                     if(error) alert('Gagal: ' + error.message);
                     else {
                         alert('Pengeluaran disimpan!');
                         await this.loadData();
-                    }
-                },
-
-                async simpanPendapatanMekanik() {
-                    if(!this.formMekanikHarian.nama_mekanik || !this.formMekanikHarian.pendapatan) {
-                        alert('Mohon isi nama mekanik dan nominal pendapatan!');
-                        return;
-                    }
-                    this.formMekanikHarian.status = 'Belum Bayar';
-                    const { error } = await _supabase.from('pendapatan_mekanik').insert([this.formMekanikHarian]);
-                    if(error) alert('Gagal: ' + error.message);
-                    else {
-                        alert('Pendapatan mekanik berhasil disimpan!');
-                        this.formMekanikHarian = { nama_mekanik: '', tanggal: '', pendapatan: '', status: 'Belum Bayar' };
-                        await this.loadData();
-                    }
-                },
-
-                async bayarMekanik(item) {
-                    if(confirm("Lakukan pembayaran pendapatan untuk mekanik " + item.nama_mekanik + "?")) {
-                        const { error } = await _supabase.from('pendapatan_mekanik').update({ status: 'Lunas' }).eq('id', item.id);
-                        if(error) alert('Gagal: ' + error.message);
-                        else {
-                            alert('Pembayaran mekanik berhasil dilunasi!');
-                            await this.loadData();
-                        }
                     }
                 }
             }
