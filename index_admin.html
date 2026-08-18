@@ -7,11 +7,28 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        @media print {
+            aside, header, .no-print {
+                display: none !important;
+            }
+            body, main {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            #printable-area {
+                width: 100% !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+        }
+    </style>
 </head>
 <body class="bg-gray-100 font-sans" x-data="bengkelApp()" x-init="initApp()">
 
     <div class="min-h-screen flex flex-col">
-        <header class="bg-blue-600 text-white shadow-md p-4 flex justify-between items-center">
+        <header class="bg-blue-600 text-white shadow-md p-4 flex justify-between items-center no-print">
             <div class="flex items-center gap-3">
                 <h1 class="text-lg font-bold">🛠️ Sistem Bengkel Pintar - Admin</h1>
                 <span class="bg-blue-500 text-xs px-2 py-1 rounded uppercase font-semibold" x-text="'Role: ' + userRole"></span>
@@ -19,7 +36,7 @@
         </header>
 
         <div class="flex flex-1 flex-col md:flex-row">
-            <aside class="w-full md:w-64 bg-white shadow-md p-4 space-y-2">
+            <aside class="w-full md:w-64 bg-white shadow-md p-4 space-y-2 no-print">
                 <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Menu Admin</p>
                 <button @click="adminTab = 'barang'" :class="adminTab === 'barang' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100 text-gray-700'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">📦 Master Barang</button>
                 <button @click="adminTab = 'pembelian'" :class="adminTab === 'pembelian' ? 'bg-blue-600 text-white' : 'hover:bg-gray-100'" class="w-full text-left px-3 py-2 rounded text-sm font-medium">📦 Barang Masuk (Restock)</button>
@@ -392,13 +409,13 @@
                     </div>
                 </div>
 
-                <div x-show="userRole === 'admin' && adminTab === 'laporan'" class="space-y-6">
+                <div x-show="userRole === 'admin' && adminTab === 'laporan'" class="space-y-6" id="printable-area">
                     <div class="flex justify-between items-center">
                         <h2 class="text-xl font-bold text-gray-800">Laporan Keuangan</h2>
-                        <button @click="window.print()" class="bg-gray-800 text-white px-4 py-2 rounded text-sm font-bold hover:bg-black">🖨️ Print Laporan</button>
+                        <button @click="window.print()" class="no-print bg-gray-800 text-white px-4 py-2 rounded text-sm font-bold hover:bg-black">🖨️ Print Laporan</button>
                     </div>
 
-                    <div class="bg-white p-4 rounded-lg shadow flex flex-wrap gap-4 items-center">
+                    <div class="bg-white p-4 rounded-lg shadow flex flex-wrap gap-4 items-center no-print">
                         <div>
                             <label class="block text-xs font-semibold text-gray-600 mb-1">Filter Per Hari</label>
                             <input type="date" x-model="laporanFilter.hari" @change="laporanFilter.bulan = ''; laporanFilter.tahun = ''" class="border p-2 rounded text-sm">
@@ -432,6 +449,48 @@
                         <div class="bg-white p-4 rounded-lg shadow border-l-4 border-blue-500">
                             <p class="text-xs text-gray-500">Pemasukan Bersih</p>
                             <p class="text-lg font-bold text-blue-600" x-text="'Rp ' + Number(hitungLaporan.pemasukanBersih).toLocaleString()"></p>
+                        </div>
+                    </div>
+
+                    <!-- Tabel Laporan Keuangan ala Excel -->
+                    <div class="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-300 mt-6">
+                        <div class="overflow-x-auto">
+                            <table class="w-full border-collapse border border-gray-300 text-sm text-left text-gray-800">
+                                <thead>
+                                    <tr class="bg-gray-100 font-semibold text-gray-700">
+                                        <th class="border border-gray-300 px-3 py-2.5 text-center w-12">No</th>
+                                        <th class="border border-gray-300 px-3 py-2.5">Keterangan / Komponen Keuangan</th>
+                                        <th class="border border-gray-300 px-3 py-2.5 text-center w-36">Kategori</th>
+                                        <th class="border border-gray-300 px-3 py-2.5 text-right w-48">Jumlah (Rp)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="border border-gray-300 px-3 py-2.5 text-center">1</td>
+                                        <td class="border border-gray-300 px-3 py-2.5 font-medium">Pemasukan Kotor (Penjualan Sparepart & Jasa)</td>
+                                        <td class="border border-gray-300 px-3 py-2.5 text-center text-emerald-600 font-semibold">Pemasukan</td>
+                                        <td class="border border-gray-300 px-3 py-2.5 text-right font-medium" x-text="'Rp ' + Number(hitungLaporan.pemasukanKotor).toLocaleString()"></td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="border border-gray-300 px-3 py-2.5 text-center">2</td>
+                                        <td class="border border-gray-300 px-3 py-2.5 font-medium">Modal Barang Terjual (HPP)</td>
+                                        <td class="border border-gray-300 px-3 py-2.5 text-center text-amber-600 font-semibold">HPP</td>
+                                        <td class="border border-gray-300 px-3 py-2.5 text-right font-medium" x-text="'Rp ' + Number(hitungLaporan.hpp).toLocaleString()"></td>
+                                    </tr>
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="border border-gray-300 px-3 py-2.5 text-center">3</td>
+                                        <td class="border border-gray-300 px-3 py-2.5 font-medium">Total Pengeluaran Operasional Bengkel</td>
+                                        <td class="border border-gray-300 px-3 py-2.5 text-center text-rose-600 font-semibold">Pengeluaran</td>
+                                        <td class="border border-gray-300 px-3 py-2.5 text-right font-medium" x-text="'Rp ' + Number(hitungLaporan.pengeluaran).toLocaleString()"></td>
+                                    </tr>
+                                </tbody>
+                                <tfoot>
+                                    <tr class="bg-gray-100 font-bold text-gray-900">
+                                        <td colspan="3" class="border border-gray-300 px-3 py-3 text-right">Pemasukan Bersih (Net Income):</td>
+                                        <td class="border border-gray-300 px-3 py-3 text-right text-blue-600 text-base" x-text="'Rp ' + Number(hitungLaporan.pemasukanBersih).toLocaleString()"></td>
+                                    </tr>
+                                </tfoot>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -621,7 +680,6 @@
                         let successCount = 0;
                         let failCount = 0;
 
-                        // Lewati header (baris index 0)
                         for(let i = 1; i < lines.length; i++) {
                             let row = lines[i].split(",").map(val => val.replace(/^"|"$/g, '').trim());
                             if(row.length >= 6) {
@@ -843,7 +901,7 @@
                     }
                 },
 
-                // --- RIWAYAT TRANSAKSI GABUNGAN & FILTER (SEMUA JENIS TRANSAKSI) ---
+                // --- RIWAYAT TRANSAKSI GABUNGAN & FILTER ---
                 get gabunganRiwayatList() {
                     let listKasirAntrian = this.antrianList.filter(a => a.status && a.status.toLowerCase().includes('selesai')).map(t => ({
                         uniqueId: 'antrian-' + t.id,
