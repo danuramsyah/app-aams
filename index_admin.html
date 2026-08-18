@@ -460,6 +460,41 @@
         </div>
     </div>
 
+    <!-- MODAL BAYAR GAJI MEKANIK -->
+    <div x-show="showBayarGajiModal" class="fixed inset-0 bg-black bg-opacity-55 flex items-center justify-center z-50 p-4" x-cloak>
+        <div class="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden flex flex-col">
+            <div class="bg-green-600 text-white px-5 py-3 flex justify-between items-center">
+                <h3 class="font-bold text-lg" x-text="'Bayar Gaji - ' + (selectedMekanikBayar?.nama_mekanik || '')"></h3>
+                <button @click="showBayarGajiModal = false" class="text-white hover:text-gray-200 font-bold text-xl">&times;</button>
+            </div>
+            <div class="p-5 space-y-4">
+                <div class="bg-gray-50 p-3 rounded text-sm space-y-1">
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Total Pendapatan Jasa:</span>
+                        <strong class="text-blue-600" x-text="'Rp ' + Number(selectedMekanikBayar?.total_pendapatan || 0).toLocaleString()"></strong>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-gray-600">Total Layanan:</span>
+                        <strong x-text="(selectedMekanikBayar?.total_layanan || 0) + ' Transaksi / Jasa'"></strong>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Nominal Gaji yang Dibayarkan (Rp)</label>
+                    <input type="number" x-model="formBayarGaji.nominal" class="border p-2 rounded w-full text-sm font-bold" placeholder="Masukkan nominal...">
+                    <p class="text-xs text-gray-500 mt-1">Dapat disesuaikan atau dipotong untuk operasional / kasbon.</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-semibold text-gray-700 mb-1">Keterangan / Catatan</label>
+                    <input type="text" x-model="formBayarGaji.keterangan" class="border p-2 rounded w-full text-sm" placeholder="Contoh: Potong operasional / kasbon">
+                </div>
+            </div>
+            <div class="bg-gray-100 px-5 py-3 flex justify-end space-x-2">
+                <button @click="showBayarGajiModal = false" class="bg-gray-400 text-white px-4 py-2 rounded text-sm font-bold hover:bg-gray-500">Batal</button>
+                <button @click="prosesBayarGaji()" class="bg-green-600 text-white px-4 py-2 rounded text-sm font-bold hover:bg-green-700">Simpan & Bayar</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const SUPABASE_URL = 'https://lppqzaiipeqomwvzsqvr.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxwcHF6YWlpcGVxb213dnpzcXZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODYzNjA5MzAsImV4cCI6MjEwMTkzNjkzMH0.rSKXoseYUe3mtON-_s_pC5YsfVWrxFz3tUkuVTyAOn0';
@@ -475,6 +510,10 @@
                 
                 showDetailModal: false,
                 selectedMekanikDetail: null,
+
+                showBayarGajiModal: false,
+                selectedMekanikBayar: null,
+                formBayarGaji: { nominal: 0, keterangan: '' },
 
                 formBarang: { kode_barang: 'BRG-001', nama_barang: '', supplier: '', harga_beli: '', harga_jual: '', stok: '' },
                 formRestock: { kode_barang: '', jumlah: '', harga_beli: '', metode_pembayaran: 'Tunai', tanggal_jatuh_tempo: '', total_bayar: 0 },
@@ -610,7 +649,7 @@
                     }
                 },
 
-                // --- PENDAPATAN MEKANIK (DARI TRANSAKSI KASIR DAN TABEL ANTRIAN JSON) ---
+                // --- PENDAPATAN MEKANIK ---
                 get rekapPendapatanMekanik() {
                     let rekapData = {};
 
@@ -666,45 +705,57 @@
                     this.showDetailModal = true;
                 },
 
-                async bayarGajiMekanik(item) {
-                    if(confirm(`Konfirmasi pembayaran gaji untuk mekanik ${item.nama_mekanik} sebesar Rp ${Number(item.total_pendapatan).toLocaleString()}?`)) {
-                        
-                        const now = new Date();
-                        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-                        const listLength = this.pengeluaranList.length;
-                        const idVal = 'PK-' + String(listLength + 1).padStart(3, '0');
+                bayarGajiMekanik(item) {
+                    this.selectedMekanikBayar = item;
+                    this.formBayarGaji = {
+                        nominal: item.total_pendapatan,
+                        keterangan: `Pembayaran Gaji Mekanik (${item.nama_mekanik}) - ${item.total_layanan} Layanan Jasa`
+                    };
+                    this.showBayarGajiModal = true;
+                },
 
-                        const payload = {
-                            id_pengeluaran: idVal,
-                            kategori: 'Gaji Mekanik',
-                            nominal: item.total_pendapatan,
-                            keterangan: `Pembayaran Gaji Mekanik (${item.nama_mekanik}) - ${item.total_layanan} Layanan Jasa`,
-                            tanggal: todayStr
-                        };
+                async prosesBayarGaji() {
+                    if(!this.formBayarGaji.nominal || this.formBayarGaji.nominal <= 0) {
+                        return alert('Nominal pembayaran gaji harus lebih besar dari 0!');
+                    }
 
-                        try {
-                            let { error } = await _supabase.from('pengeluaran').insert([payload]);
-                            if (error && error.message && error.message.includes('id_pengeluaran')) {
-                                const altPayload = {
-                                    id: idVal,
-                                    kategori: payload.kategori,
-                                    nominal: payload.nominal,
-                                    keterangan: payload.keterangan,
-                                    tanggal: payload.tanggal
-                                };
-                                const retry = await _supabase.from('pengeluaran').insert([altPayload]);
-                                error = retry.error;
-                            }
+                    const item = this.selectedMekanikBayar;
+                    const now = new Date();
+                    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+                    const listLength = this.pengeluaranList.length;
+                    const idVal = 'PK-' + String(listLength + 1).padStart(3, '0');
 
-                            if (error) {
-                                alert("Gagal mencatat pengeluaran: " + error.message);
-                            } else {
-                                alert(`Gaji mekanik ${item.nama_mekanik} berhasil dicatat sebagai pengeluaran!`);
-                                await this.loadData();
-                            }
-                        } catch(err) {
-                            alert("Terjadi kesalahan: " + err.message);
+                    const payload = {
+                        id_pengeluaran: idVal,
+                        kategori: 'Gaji Mekanik',
+                        nominal: Number(this.formBayarGaji.nominal),
+                        keterangan: this.formBayarGaji.keterangan || `Pembayaran Gaji Mekanik (${item.nama_mekanik})`,
+                        tanggal: todayStr
+                    };
+
+                    try {
+                        let { error } = await _supabase.from('pengeluaran').insert([payload]);
+                        if (error && error.message && error.message.includes('id_pengeluaran')) {
+                            const altPayload = {
+                                id: idVal,
+                                kategori: payload.kategori,
+                                nominal: payload.nominal,
+                                keterangan: payload.keterangan,
+                                tanggal: payload.tanggal
+                            };
+                            const retry = await _supabase.from('pengeluaran').insert([altPayload]);
+                            error = retry.error;
                         }
+
+                        if (error) {
+                            alert("Gagal mencatat pengeluaran: " + error.message);
+                        } else {
+                            alert(`Gaji mekanik ${item.nama_mekanik} sebesar Rp ${Number(payload.nominal).toLocaleString()} berhasil dicatat sebagai pengeluaran!`);
+                            this.showBayarGajiModal = false;
+                            await this.loadData();
+                        }
+                    } catch(err) {
+                        alert("Terjadi kesalahan: " + err.message);
                     }
                 },
 
@@ -780,7 +831,7 @@
                     document.body.removeChild(link);
                 },
 
-                // --- LAPORAN KEUANGAN DENGAN FILTER WAKTU & SEMUA TRANSAKSI ---
+                // --- LAPORAN KEUANGAN ---
                 get hitungLaporan() {
                     let filteredKasir = this.antrianList.filter(a => a.status && a.status.toLowerCase().includes('selesai'));
                     let filteredPengeluaran = this.pengeluaranList;
